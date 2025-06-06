@@ -1,7 +1,6 @@
 import { Router } from "express";
 import fetch from "node-fetch";
 import crypto from "crypto";
-import jwt from "jsonwebtoken";
 
 const router = Router();
 
@@ -36,13 +35,6 @@ router.get("/test", async (_req, res) => {
     console.log(err);
     res.status(500).json({ error: "CoinPayments API call failed" });
   }
-});
-
-router.get("/test/generate-token", (_req, res) => {
-  const token = jwt.sign({ role: "user" }, process.env.JWT_SECRET!, {
-    expiresIn: "7d",
-  });
-  res.json("Bearer " + token);
 });
 
 export default router;

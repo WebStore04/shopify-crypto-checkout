@@ -4,6 +4,7 @@ import cors from "cors";
 
 import testRoutes from "./routes/test";
 import payRoutes from "./routes/pay";
+import tokenRoutes from "./routes/token";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use("/api", testRoutes);
 app.use("/api", payRoutes);
+app.use("/api", tokenRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
