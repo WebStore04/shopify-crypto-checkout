@@ -40,7 +40,7 @@ router.get("/test", async (_req, res) => {
 
 router.get("/test/generate-token", (_req, res) => {
   const token = jwt.sign({ role: "user" }, process.env.JWT_SECRET!, {
-    expiresIn: "24h",
+    expiresIn: "7d",
   });
   res.json("Bearer " + token);
 });
