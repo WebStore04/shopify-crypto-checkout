@@ -3,6 +3,8 @@ import crypto from "crypto";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
 
+import { authenticateJWT } from "../middleware/auth";
+
 dotenv.config();
 
 const router = Router();
@@ -14,6 +16,7 @@ interface PayRequestBody {
 
 router.post(
   "/pay",
+  authenticateJWT,
   async (_req: Request<{}, {}, PayRequestBody>, res: Response) => {
     const { amount, coin } = _req.body;
 
