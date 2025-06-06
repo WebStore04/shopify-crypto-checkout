@@ -20,8 +20,20 @@ router.post(
   async (_req: Request<{}, {}, PayRequestBody>, res: Response) => {
     const { amount, coin } = _req.body;
 
-    if (!amount || !coin) {
-      res.status(400).json({ error: "Missing amount or coin" });
+    let errors = {};
+
+    const parseAmount = parseFloat(amount);
+    if (!amount || isNaN(parseAmount) || parseAmount <= 0) {
+      Object.assign(errors, { amount: "Invalid ammount" });
+    }
+
+    const supportedCoins = ["BTC", "ETH", "LTC"];
+    if (!coin || !supportedCoins.includes(coin)) {
+      Object.assign(errors, { coin: "Unsupported coin" });
+    }
+
+    if (Object.keys(errors).length !== 0) {
+      res.status(400).json(errors);
     }
 
     console.log("Creating transaction with:", { amount, coin });
@@ -59,12 +71,18 @@ router.post(
       const data = await response.json();
       console.log("CoinPayments response:", data);
       if (data.error === "ok") {
-        res.json(data.result);
+        res.json({
+          address: data.result.address,
+          amount: data.result.amount,
+          checkout_url: data.result.checkout_url,
+          qrcode_url: data.result.qrcode_url,
+        });
       } else {
         res.status(400).json({ error: data.error });
       }
     } catch (err) {
-      res.status(500).json({ error: "Something went wrong" });
+      console.error("[/pay] Error:", err);
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 );
