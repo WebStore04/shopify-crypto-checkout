@@ -12,6 +12,9 @@ export default function Widget() {
     checkout_url: string;
   }>(null);
 
+  const token =
+    "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc0OTIzNTM4MywiZXhwIjoxNzQ5ODQwMTgzfQ.qT8L07MpMg54-5_0-5nOO_ER5VEto_u062AjUsfOWCE";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -21,11 +24,16 @@ export default function Widget() {
     try {
       const response = await fetch("http://localhost:3000/api/pay", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
+        },
         body: JSON.stringify({ amount, coin }),
       });
 
       const data = await response.json();
+
+      console.log(data);
 
       if (response.ok) {
         setPaymentInfo(data);
