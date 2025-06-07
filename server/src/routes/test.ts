@@ -1,39 +1,23 @@
 import { Router } from "express";
-import fetch from "node-fetch";
-import crypto from "crypto";
+import Coinpayments from "coinpayments";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = Router();
 
+const client = new Coinpayments({
+  key: process.env.COINPAYMENTS_CLIENT_API_KEY!,
+  secret: process.env.COINPAYMENTS_CLIENT_SECRET!,
+});
+
 router.get("/test", async (_req, res) => {
-  const apiKey = process.env.COINPAYMENTS_CLIENT_API_KEY!;
-  const apiSecret = process.env.COINPAYMENTS_CLIENT_SECRET!;
-
-  const body = new URLSearchParams();
-  body.append("version", "1");
-  body.append("key", apiKey ?? "");
-  body.append("cmd", "get_basic_info");
-  body.append("format", "json");
-
-  const hmac = crypto
-    .createHmac("sha256", apiSecret)
-    .update(body.toString())
-    .digest("hex");
-
   try {
-    const response = await fetch("https://www.coinpayments.net/api.php", {
-      method: "POST",
-      body,
-      headers: {
-        HMAC: hmac,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-
-    const data: unknown = await response.json();
-    res.json(data);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ error: "CoinPayments API call failed" });
+    const info = await client.getBasicInfo();
+    res.json(info);
+  } catch (err: any) {
+    console.error("CoinPayments API call failed:", err);
+    res.status(500).json({ error: err.extra.data.error });
   }
 });
 

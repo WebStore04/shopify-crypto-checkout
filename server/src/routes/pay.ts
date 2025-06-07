@@ -1,88 +1,77 @@
 import { Router, Request, Response } from "express";
-import crypto from "crypto";
-import fetch from "node-fetch";
 import dotenv from "dotenv";
-
+import Coinpayments from "coinpayments";
 import { authenticateJWT } from "../middleware/auth";
 
 dotenv.config();
 
 const router = Router();
-
 interface PayRequestBody {
   amount: string;
   coin: string;
 }
 
+interface PayRequestUser {
+  email?: string;
+}
+
+const client = new Coinpayments({
+  key: process.env.COINPAYMENTS_CLIENT_API_KEY!,
+  secret: process.env.COINPAYMENTS_CLIENT_SECRET!,
+});
+
 router.post(
   "/pay",
   authenticateJWT,
-  async (_req: Request<{}, {}, PayRequestBody>, res: Response) => {
+  async (
+    _req: Request<{}, {}, PayRequestBody> & { user?: PayRequestUser },
+    res: Response
+  ) => {
     const { amount, coin } = _req.body;
 
-    let errors = {};
+    const errors: Record<string, string> = {};
 
     const parseAmount = parseFloat(amount);
     if (!amount || isNaN(parseAmount) || parseAmount <= 0) {
-      Object.assign(errors, { amount: "Invalid ammount" });
+      errors.amount = "Invalid amount";
     }
 
-    const supportedCoins = ["BTC", "ETH", "LTC"];
+    const supportedCoins = ["BTC", "ETH", "LTC", "USDT.TRC20"];
     if (!coin || !supportedCoins.includes(coin)) {
-      Object.assign(errors, { coin: "Unsupported coin" });
+      errors.coin = "Unsupported coin";
     }
 
     if (Object.keys(errors).length !== 0) {
       res.status(400).json(errors);
+      return;
     }
 
     console.log("Creating transaction with:", { amount, coin });
 
-    const API_KEY = process.env.COINPAYMENTS_CLIENT_API_KEY!;
-    const API_SECRET = process.env.COINPAYMENTS_CLIENT_SECRET!;
-    const url = process.env.COINPAYMENTS_CLIENT_API_URL!;
-
-    const params = new URLSearchParams();
-    params.append("version", "1");
-    params.append("cmd", "create_transaction");
-    params.append("key", API_KEY);
-    params.append("amount", amount);
-    params.append("currency1", "USD");
-    params.append("currency2", coin);
-    params.append("format", "json");
-
-    const postData = params.toString();
-
-    const signature = crypto
-      .createHmac("sha512", API_SECRET)
-      .update(postData)
-      .digest("hex");
-
     try {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          HMAC: signature,
-        },
-        body: postData,
+      const transaction = await client.createTransaction({
+        amount: parseAmount,
+        currency1: "USD",
+        currency2: coin,
+        buyer_email: _req.user?.email || "",
       });
 
-      const data = await response.json();
-      console.log("CoinPayments response:", data);
-      if (data.error === "ok") {
-        res.json({
-          address: data.result.address,
-          amount: data.result.amount,
-          checkout_url: data.result.checkout_url,
-          qrcode_url: data.result.qrcode_url,
-        });
-      } else {
-        res.status(400).json({ error: data.error });
-      }
-    } catch (err) {
-      console.error("[/pay] Error:", err);
-      res.status(500).json({ error: "Internal server error" });
+      console.log("CoinPayments transaction:", transaction);
+
+      res.json({
+        address: transaction.address,
+        amount: transaction.amount,
+        checkout_url: transaction.checkout_url,
+        qrcode_url: transaction.qrcode_url,
+      });
+    } catch (err: any) {
+      console.error("[/pay] CoinPayments error:", err);
+      res.status(500).json({
+        error:
+          err?.error?.extra?.data?.error ||
+          err?.message ||
+          "CoinPayments API call failed",
+      });
     }
   }
 );
