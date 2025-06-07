@@ -2,7 +2,7 @@ import { useState } from "react";
 
 export default function Widget() {
   const [amount, setAmount] = useState("");
-  const [coin, setCoin] = useState("");
+  const [coin, setCoin] = useState("BTC");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [paymentInfo, setPaymentInfo] = useState<null | {
