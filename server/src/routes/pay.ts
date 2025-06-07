@@ -54,6 +54,7 @@ router.post(
         currency1: "USD",
         currency2: coin,
         buyer_email: _req.user?.email || "",
+        ipn_url: `${process.env.BASE_URL}/api/ipn`,
       });
 
       console.log("CoinPayments transaction:", transaction);
