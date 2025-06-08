@@ -9,6 +9,7 @@ const router = Router();
 interface PayRequestBody {
   amount: string;
   coin: string;
+  email: string;
 }
 
 interface PayRequestUser {
@@ -27,7 +28,7 @@ router.post(
     _req: Request<{}, {}, PayRequestBody> & { user?: PayRequestUser },
     res: Response
   ) => {
-    const { amount, coin } = _req.body;
+    const { amount, coin, email } = _req.body;
 
     const errors: Record<string, string> = {};
 
@@ -36,7 +37,7 @@ router.post(
       errors.amount = "Invalid amount";
     }
 
-    const supportedCoins = ["BTC", "ETH", "LTC", "USDT.TRC20"];
+    const supportedCoins = ["LTCT", "BTC", "ETH", "LTC", "USDT.TRC20"];
     if (!coin || !supportedCoins.includes(coin)) {
       errors.coin = "Unsupported coin";
     }
@@ -53,7 +54,7 @@ router.post(
         amount: parseAmount,
         currency1: "USD",
         currency2: coin,
-        buyer_email: _req.user?.email || "",
+        buyer_email: _req.user?.email || email || "",
         ipn_url: `${process.env.BASE_URL}/api/ipn`,
       });
 

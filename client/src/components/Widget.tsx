@@ -1,8 +1,8 @@
 import { useState } from "react";
 
-export default function Widget() {
+export default function Widget({ token }: { token: string }) {
   const [amount, setAmount] = useState("");
-  const [coin, setCoin] = useState("BTC");
+  const [coin, setCoin] = useState("LTCT");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [paymentInfo, setPaymentInfo] = useState<null | {
@@ -12,7 +12,7 @@ export default function Widget() {
     checkout_url: string;
   }>(null);
 
-  const token =
+  token =
     "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc0OTIzNTM4MywiZXhwIjoxNzQ5ODQwMTgzfQ.qT8L07MpMg54-5_0-5nOO_ER5VEto_u062AjUsfOWCE";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,7 +28,7 @@ export default function Widget() {
           "Content-Type": "application/json",
           Authorization: token,
         },
-        body: JSON.stringify({ amount, coin }),
+        body: JSON.stringify({ amount, coin, email: "dzulroman553@gmail.com" }),
       });
 
       const data = await response.json();
@@ -63,6 +63,7 @@ export default function Widget() {
           onChange={(e) => setCoin(e.target.value)}
           className="border p-2 rounded"
         >
+          <option value="LTCT">Litecoin Testnet (LTCT)</option>
           <option value="BTC">Bitcoin (BTC)</option>
           <option value="ETH">Ethereum (ETH)</option>
           <option value="LTC">Litecoin (LTC)</option>
