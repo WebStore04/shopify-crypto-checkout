@@ -1,6 +1,16 @@
 import { useState } from "react";
 
-export default function Widget({ token }: { token: string }) {
+interface WidgetProps {
+  token: string;
+  mercuryoWidgetId?: string;
+  merchantUsdtAddress?: string;
+}
+
+export default function Widget({
+  token,
+  mercuryoWidgetId = "xxxxxxxxxxxxx",
+  merchantUsdtAddress = "xxxxxxxxxxxxxxxxx",
+}: WidgetProps) {
   const [amount, setAmount] = useState("");
   const [email, setEmail] = useState("");
   const [coin, setCoin] = useState("LTCT");
@@ -16,6 +26,21 @@ export default function Widget({ token }: { token: string }) {
   const authHeader =
     token ||
     "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc0OTIzNTM4MywiZXhwIjoxNzQ5ODQwMTgzfQ.qT8L07MpMg54-5_0-5nOO_ER5VEto_u062AjUsfOWCE";
+
+  const getMercuryoUrl = () => {
+    if (!amount || !email) return "#";
+
+    const query = new URLSearchParams({
+      amount,
+      currency: "usd",
+      to: "usdt",
+      wallet: merchantUsdtAddress,
+      widget_id: mercuryoWidgetId,
+      user_email: email,
+    });
+
+    return `https://widget.mercuryo.io/?${query.toString()}`;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +59,8 @@ export default function Widget({ token }: { token: string }) {
       });
 
       const data = await response.json();
+      console.log(data);
+
       if (response.ok) {
         setPaymentInfo(data);
       } else {
@@ -65,6 +92,7 @@ export default function Widget({ token }: { token: string }) {
           className="border p-2 rounded"
           required
         />
+
         <select
           value={coin}
           onChange={(e) => setCoin(e.target.value)}
@@ -76,13 +104,29 @@ export default function Widget({ token }: { token: string }) {
           <option value="ETH">Ethereum (ETH)</option>
           <option value="LTC">Litecoin (LTC)</option> */}
         </select>
+
         <button
           type="submit"
           disabled={loading}
           className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
         >
-          {loading ? "Processing..." : "Pay Now"}
+          {loading ? "Processing..." : "Pay with Crypto"}
         </button>
+
+        {coin === "USDT.TRC20" && (
+          <>
+            <hr className="my-2" />
+            <p className="text-sm text-center text-gray-600">or</p>
+            <a
+              href={getMercuryoUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-600 text-white py-2 rounded hover:bg-green-700 text-center block"
+            >
+              Pay with Visa/Mastercard 💳
+            </a>
+          </>
+        )}
       </form>
 
       {error && <p className="text-red-500 text-sm mt-4">❌ {error}</p>}
@@ -108,7 +152,7 @@ export default function Widget({ token }: { token: string }) {
             rel="noopener noreferrer"
             className="text-blue-600 underline block mt-2"
           >
-            Go to Checkout →
+            Pay with Crypto →
           </a>
         </div>
       )}
