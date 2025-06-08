@@ -37,7 +37,8 @@ router.post(
       errors.amount = "Invalid amount";
     }
 
-    const supportedCoins = ["LTCT", "BTC", "ETH", "LTC", "USDT.TRC20"];
+    // const supportedCoins = ["LTCT", "BTC", "ETH", "LTC", "USDT.TRC20"];
+    const supportedCoins = ["LTCT", "USDT.TRC20"];
     if (!coin || !supportedCoins.includes(coin)) {
       errors.coin = "Unsupported coin";
     }
@@ -47,7 +48,7 @@ router.post(
       return;
     }
 
-    console.log("Creating transaction with:", { amount, coin });
+    console.log("Creating transaction with:", { amount, coin, email });
 
     try {
       const transaction = await client.createTransaction({
@@ -56,6 +57,8 @@ router.post(
         currency2: coin,
         buyer_email: _req.user?.email || email || "",
         ipn_url: `${process.env.BASE_URL}/api/ipn`,
+        success_url: `${process.env.BASE_URL}/api/success`,
+        cancel_url: `${process.env.BASE_URL}/api/cancel`,
       });
 
       console.log("CoinPayments transaction:", transaction);
