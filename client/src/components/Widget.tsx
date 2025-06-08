@@ -2,6 +2,7 @@ import { useState } from "react";
 
 export default function Widget({ token }: { token: string }) {
   const [amount, setAmount] = useState("");
+  const [email, setEmail] = useState("");
   const [coin, setCoin] = useState("LTCT");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -12,7 +13,8 @@ export default function Widget({ token }: { token: string }) {
     checkout_url: string;
   }>(null);
 
-  token =
+  const authHeader =
+    token ||
     "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc0OTIzNTM4MywiZXhwIjoxNzQ5ODQwMTgzfQ.qT8L07MpMg54-5_0-5nOO_ER5VEto_u062AjUsfOWCE";
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,15 +28,12 @@ export default function Widget({ token }: { token: string }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token,
+          Authorization: authHeader,
         },
-        body: JSON.stringify({ amount, coin, email: "dzulroman553@gmail.com" }),
+        body: JSON.stringify({ amount, coin, email }),
       });
 
       const data = await response.json();
-
-      console.log(data);
-
       if (response.ok) {
         setPaymentInfo(data);
       } else {
@@ -58,15 +57,24 @@ export default function Widget({ token }: { token: string }) {
           className="border p-2 rounded"
           required
         />
+        <input
+          type="email"
+          placeholder="Buyer Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="border p-2 rounded"
+          required
+        />
         <select
           value={coin}
           onChange={(e) => setCoin(e.target.value)}
           className="border p-2 rounded"
         >
           <option value="LTCT">Litecoin Testnet (LTCT)</option>
-          <option value="BTC">Bitcoin (BTC)</option>
+          <option value="USDT.TRC20">USDT (TRC20)</option>
+          {/* <option value="BTC">Bitcoin (BTC)</option>
           <option value="ETH">Ethereum (ETH)</option>
-          <option value="LTC">Litecoin (LTC)</option>
+          <option value="LTC">Litecoin (LTC)</option> */}
         </select>
         <button
           type="submit"
