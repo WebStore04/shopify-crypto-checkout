@@ -4,8 +4,11 @@ import dotenv from "dotenv";
 import Coinpayments from "coinpayments";
 import querystring from "querystring";
 import Transaction from "../models/Transaction";
+import { sendEmail } from "../utils/sendEmail";
 
 dotenv.config();
+
+const merchantEmail = process.env.MERCHANT_NOTIFICATION_EMAIL!;
 
 const router = Router();
 
@@ -70,6 +73,17 @@ router.post("/ipn", async (_req: Request, res: Response) => {
           address: COLD_WALLET_ADDRESS,
           auto_confirm: 1,
         });
+
+        await sendEmail(
+          merchantEmail,
+          "New Payment Confirmed",
+          `
+          <h2>New Payment Received</h2>
+          <p><strong>Amount:</strong> $${amount}</p>
+          <p><strong>Coin:</strong> ${currency}</p>
+          <p><strong>Status:</strong> Confirmed</p>
+          `
+        );
 
         console.log("[IPN] Withdrawal initiated:", withdrawal);
         tx.status = "withdrawn";
