@@ -2,8 +2,11 @@ import { Router, Request, Response } from "express";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import Transaction from "../models/Transaction";
+import { sendEmail } from "../utils/sendEmail";
 
 dotenv.config();
+
+const merchantEmail = process.env.MERCHANT_NOTIFICATION_EMAIL!;
 
 const router = Router();
 
@@ -40,6 +43,18 @@ router.post("/mercuryo/ipn", async (_req: Request, res: Response) => {
       status: "confirmed",
       rawIPN: event,
     });
+
+    await sendEmail(
+      merchantEmail,
+      "Card Payment Completed",
+      `
+      <h2>Card Payment Received</h2>
+      <p><strong>Buyer:</strong> ${event.user_email}</p>
+      <p><strong>Total Paid:</strong> $${event.fiat_amount}</p>
+      <p><strong>Fee (2%):</strong>USDT.TRC20</p>
+      <p><strong>You Will Receive:</strong>Number(event.fiat_amount)</p>
+      `
+    );
 
     console.log("Mercuryo transaction recorded:", tx.txId);
   }
