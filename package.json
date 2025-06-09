@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "scripts": {
+    "dev": "concurrently \"cd client/admin-panel && yarn dev\" \"cd client/checkout-widget && yarn dev\" \"cd server && yarn dev\""
+  }
+
+}
