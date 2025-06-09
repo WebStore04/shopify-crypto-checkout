@@ -48,6 +48,13 @@ export default function Widget({
     setError("");
     setPaymentInfo(null);
 
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError("Please enter a valid amount greater than 0");
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("http://localhost:3000/api/pay", {
         method: "POST",
@@ -82,6 +89,7 @@ export default function Widget({
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="number"
+          name="amount"
           placeholder="Amount (USD)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
@@ -90,6 +98,7 @@ export default function Widget({
         />
         <input
           type="email"
+          name="email"
           placeholder="Buyer Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -116,7 +125,11 @@ export default function Widget({
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+          className={`py-2 rounded text-white ${
+            loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
           {loading ? "Processing..." : "Pay with Crypto"}
         </button>
@@ -148,11 +161,14 @@ export default function Widget({
             <strong>Amount:</strong> {paymentInfo.amount} {coin}
           </p>
           {paymentInfo.qrcode_url && (
-            <img
-              src={paymentInfo.qrcode_url}
-              alt="QR Code"
-              className="w-32 h-32"
-            />
+            <>
+              <img
+                src={paymentInfo.qrcode_url}
+                alt="QR Code"
+                className="w-32 h-32"
+              />
+              <p className="text-xs text-gray-500 mt-1">Scan with wallet app</p>
+            </>
           )}
           <a
             href={paymentInfo.checkout_url}
