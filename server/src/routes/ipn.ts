@@ -3,6 +3,7 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import Coinpayments from "coinpayments";
 import querystring from "querystring";
+import Transaction from "../models/Transaction";
 
 dotenv.config();
 
@@ -52,23 +53,36 @@ router.post("/ipn", async (_req: Request, res: Response) => {
     `[IPN] Received status: ${status} for ${currency}, amount: ${amount}, txn: ${txnId}`
   );
 
-  if (status === 100) {
-    try {
-      const withdrawal = await client.createWithdrawal({
-        currency,
-        amount,
-        address: COLD_WALLET_ADDRESS,
-        auto_confirm: 1,
-      });
+  try {
+    const tx = await Transaction.findOne({ txId: txnId });
 
-      console.log("[IPN] Withdrawal initiated:", withdrawal);
-    } catch (err: any) {
-      console.error("[IPN] Withdrawal error:", err.message || err);
+    if (!tx) {
+      console.warn(`[IPN] Transaction not found: ${txnId}`);
+    } else {
+      tx.rawIPN = parsed;
+      tx.updatedAt = new Date();
+
+      if (status === 100) {
+        // Perform withdrawal
+        const withdrawal = await client.createWithdrawal({
+          currency,
+          amount,
+          address: COLD_WALLET_ADDRESS,
+          auto_confirm: 1,
+        });
+
+        console.log("[IPN] Withdrawal initiated:", withdrawal);
+        tx.status = "withdrawn";
+      } else if (status < 0) {
+        tx.status = "failed";
+      } else {
+        tx.status = "confirmed"; // awaiting withdrawal maybe
+      }
+
+      await tx.save();
     }
-  } else {
-    console.log(
-      `[IPN] Status not final (status: ${status}), skipping withdrawal`
-    );
+  } catch (err: any) {
+    console.error("[IPN] DB or withdrawal error:", err.message || err);
   }
 
   res.status(200).send("IPN received");

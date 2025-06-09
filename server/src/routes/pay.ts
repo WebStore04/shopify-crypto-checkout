@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import dotenv from "dotenv";
 import Coinpayments from "coinpayments";
 import { authenticateJWT } from "../middleware/auth";
+import Transaction from "../models/Transaction";
 
 dotenv.config();
 
@@ -71,6 +72,17 @@ router.post(
       });
 
       console.log("CoinPayments transaction:", transaction);
+
+      await Transaction.create({
+        txId: transaction.txn_id,
+        coin,
+        amount: totalAmount, // the 102%
+        merchantReceived: parseFloat(amount),
+        adminFee,
+        address: transaction.address,
+        buyerEmail: _req.user?.email || email || "",
+        status: "pending",
+      });
 
       res.json({
         address: transaction.address,

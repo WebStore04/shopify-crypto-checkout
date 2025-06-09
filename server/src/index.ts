@@ -10,7 +10,6 @@ import payRoutes from "./routes/pay";
 import tokenRoutes from "./routes/token";
 import ipnRoutes from "./routes/ipn";
 import mercuryoRoutes from "./routes/mercuryo";
-import { compileFunction } from "vm";
 
 dotenv.config();
 
