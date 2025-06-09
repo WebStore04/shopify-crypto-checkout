@@ -3,15 +3,20 @@ import dotenv from "dotenv";
 import cors from "cors";
 import bodyParser from "body-parser";
 
+import { connectDB } from "./db";
+
 import testRoutes from "./routes/test";
 import payRoutes from "./routes/pay";
 import tokenRoutes from "./routes/token";
 import ipnRoutes from "./routes/ipn";
 import mercuryoRoutes from "./routes/mercuryo";
+import { compileFunction } from "vm";
 
 dotenv.config();
 
 const app = express();
+
+connectDB();
 
 app.use(cors());
 
