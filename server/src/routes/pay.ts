@@ -32,12 +32,11 @@ router.post(
 
     const errors: Record<string, string> = {};
 
-    const parseAmount = parseFloat(amount);
-    if (!amount || isNaN(parseAmount) || parseAmount <= 0) {
+    const baseAmount = parseFloat(amount);
+    if (!amount || isNaN(baseAmount) || baseAmount <= 0) {
       errors.amount = "Invalid amount";
     }
 
-    // const supportedCoins = ["LTCT", "BTC", "ETH", "LTC", "USDT.TRC20"];
     const supportedCoins = ["LTCT", "USDT.TRC20"];
     if (!coin || !supportedCoins.includes(coin)) {
       errors.coin = "Unsupported coin";
@@ -48,11 +47,21 @@ router.post(
       return;
     }
 
-    console.log("Creating transaction with:", { amount, coin, email });
+    const totalAmount = parseFloat((baseAmount * 1.02).toFixed(8));
+    const adminFee = parseFloat((baseAmount * 0.02).toFixed(8));
+    const merchantReceives = baseAmount;
+
+    console.log("Creating transaction with:", {
+      baseAmount,
+      totalAmount,
+      adminFee,
+      coin,
+      email,
+    });
 
     try {
       const transaction = await client.createTransaction({
-        amount: parseAmount,
+        amount: merchantReceives,
         currency1: "USD",
         currency2: coin,
         buyer_email: _req.user?.email || email || "",

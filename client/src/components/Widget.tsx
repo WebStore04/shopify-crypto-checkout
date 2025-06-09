@@ -59,12 +59,11 @@ export default function Widget({
       });
 
       const data = await response.json();
-      console.log(data);
 
       if (response.ok) {
         setPaymentInfo(data);
       } else {
-        setError(data.error || "Unknown error");
+        setError(data.error || "An unexpected error occurred");
       }
     } catch (err) {
       setError("Network error");
@@ -72,6 +71,11 @@ export default function Widget({
 
     setLoading(false);
   };
+
+  const baseAmount = parseFloat(amount);
+  const totalWithFee = !isNaN(baseAmount)
+    ? (baseAmount * 1.02).toFixed(2)
+    : null;
 
   return (
     <div className="max-w-sm mx-auto mt-20 p-4 bg-white rounded-md shadow-md">
@@ -100,10 +104,14 @@ export default function Widget({
         >
           <option value="LTCT">Litecoin Testnet (LTCT)</option>
           <option value="USDT.TRC20">USDT (TRC20)</option>
-          {/* <option value="BTC">Bitcoin (BTC)</option>
-          <option value="ETH">Ethereum (ETH)</option>
-          <option value="LTC">Litecoin (LTC)</option> */}
         </select>
+
+        {totalWithFee && (
+          <p className="text-sm text-gray-600">
+            You will be charged <strong>${totalWithFee}</strong> (includes 2%
+            processing fee)
+          </p>
+        )}
 
         <button
           type="submit"
