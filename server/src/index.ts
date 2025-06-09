@@ -20,7 +20,7 @@ connectDB();
 app.use(cors());
 
 app.use("/api/ipn", bodyParser.raw({ type: "*/*" }));
-app.use("/api/mercuryo", bodyParser.raw({ type: "*/*" }));
+app.use("/api/mercuryo/webhook", bodyParser.raw({ type: "*/*" }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

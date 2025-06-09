@@ -1,7 +1,13 @@
 import mongoose from "mongoose";
 
 const transactionSchema = new mongoose.Schema({
-  txId: { type: String, required: true, unique: true },
+  provider: {
+    type: String,
+    enum: ["coinpayments", "mercuryo"],
+    required: true,
+  },
+  txId: { type: String, required: true, unique: true }, // CoinPayments
+  externalId: { type: String, required: true, unique: true }, // Mercuryo
   coin: { type: String, required: true },
   amount: { type: Number, required: true }, // total charged (102%)
   merchantReceived: { type: Number, required: true }, // 100%
