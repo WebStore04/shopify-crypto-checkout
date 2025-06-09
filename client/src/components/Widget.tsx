@@ -3,13 +3,13 @@ import { useState } from "react";
 interface WidgetProps {
   token: string;
   mercuryoWidgetId?: string;
-  merchantUsdtAddress?: string;
+  coldWalletAddress?: string;
 }
 
 export default function Widget({
   token,
   mercuryoWidgetId = "xxxxxxxxxxxxx",
-  merchantUsdtAddress = "xxxxxxxxxxxxxxxxx",
+  coldWalletAddress = "xxxxxxxxxxxxxxxxx",
 }: WidgetProps) {
   const [amount, setAmount] = useState("");
   const [email, setEmail] = useState("");
@@ -25,24 +25,9 @@ export default function Widget({
 
   const authHeader =
     token ||
-    "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc0OTIzNTM4MywiZXhwIjoxNzQ5ODQwMTgzfQ.qT8L07MpMg54-5_0-5nOO_ER5VEto_u062AjUsfOWCE";
+    "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc0OTQzNjY4NywiZXhwIjoxNzUwMDQxNDg3fQ.2oByMmTekKbWJXo1O8Q7XigVl3kT4sU-Ru6M-RxBNzk"; // fallback for dev
 
-  const getMercuryoUrl = () => {
-    if (!amount || !email) return "#";
-
-    const query = new URLSearchParams({
-      amount,
-      currency: "usd",
-      to: "usdt",
-      wallet: merchantUsdtAddress,
-      widget_id: mercuryoWidgetId,
-      user_email: email,
-    });
-
-    return `https://widget.mercuryo.io/?${query.toString()}`;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCryptoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -79,6 +64,28 @@ export default function Widget({
     setLoading(false);
   };
 
+  const handleMercuryoPayment = () => {
+    setError("");
+
+    const parsedAmount = parseFloat(amount);
+    if (!email || isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError("Enter a valid email and amount before paying");
+      return;
+    }
+
+    const query = new URLSearchParams({
+      amount,
+      currency: "usd",
+      to: "usdt",
+      wallet: coldWalletAddress,
+      widget_id: mercuryoWidgetId,
+      user_email: email,
+    });
+
+    const mercuryoUrl = `https://widget.mercuryo.io/?${query.toString()}`;
+    window.open(mercuryoUrl, "_blank");
+  };
+
   const baseAmount = parseFloat(amount);
   const totalWithFee = !isNaN(baseAmount)
     ? (baseAmount * 1.02).toFixed(2)
@@ -86,7 +93,7 @@ export default function Widget({
 
   return (
     <div className="max-w-sm mx-auto mt-20 p-4 bg-white rounded-md shadow-md">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form onSubmit={handleCryptoSubmit} className="flex flex-col gap-4">
         <input
           type="number"
           name="amount"
@@ -138,14 +145,14 @@ export default function Widget({
           <>
             <hr className="my-2" />
             <p className="text-sm text-center text-gray-600">or</p>
-            <a
-              href={getMercuryoUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-green-600 text-white py-2 rounded hover:bg-green-700 text-center block"
+            <button
+              type="button"
+              onClick={handleMercuryoPayment}
+              disabled={loading}
+              className="bg-green-600 text-white py-2 rounded hover:bg-green-700 text-center"
             >
-              Pay with Visa/Mastercard 💳
-            </a>
+              {loading ? "Loading widget..." : "Pay with Visa/Mastercard 💳"}
+            </button>
           </>
         )}
       </form>
