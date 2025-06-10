@@ -6,7 +6,7 @@ import bodyParser from "body-parser";
 import { connectDB } from "./db";
 
 import testRoutes from "./routes/test";
-import coinpayRoutes from "./routes/coinPaymentsPay";
+// import coinpayRoutes from "./routes/coinPaymentsPay";
 import tokenRoutes from "./routes/token";
 import coinipnRoutes from "./routes/coinPaymentsIpn";
 import mercuryoWebhookIpnRoutes from "./routes/mercuryoWebhookIpn";
