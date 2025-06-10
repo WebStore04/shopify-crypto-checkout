@@ -1,69 +1,25 @@
 import { useState } from "react";
 
 interface WidgetProps {
-  token: string;
   mercuryoWidgetId?: string;
   coldWalletAddress?: string;
 }
 
 export default function Widget({
-  token,
   mercuryoWidgetId = "xxxxxxxxxxxxx",
   coldWalletAddress = "xxxxxxxxxxxxxxxxx",
 }: WidgetProps) {
   const [amount, setAmount] = useState("");
   const [email, setEmail] = useState("");
-  const [coin, setCoin] = useState("LTCT");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [paymentInfo, setPaymentInfo] = useState<null | {
     address: string;
     amount: string;
-    qrcode_url?: string;
     checkout_url: string;
   }>(null);
 
-  const authHeader =
-    token ||
-    "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc0OTQzNjY4NywiZXhwIjoxNzUwMDQxNDg3fQ.2oByMmTekKbWJXo1O8Q7XigVl3kT4sU-Ru6M-RxBNzk"; // fallback for dev
-
-  const handleCryptoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-    setPaymentInfo(null);
-
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError("Please enter a valid amount greater than 0");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("http://localhost:3000/api/pay", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: authHeader,
-        },
-        body: JSON.stringify({ amount, coin, email }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setPaymentInfo(data);
-      } else {
-        setError(data.error || "An unexpected error occurred");
-      }
-    } catch (err) {
-      setError("Network error");
-    }
-
-    setLoading(false);
-  };
-
+  // Handle Mercuryo payment (Visa/Mastercard to USDT)
   const handleMercuryoPayment = () => {
     setError("");
 
@@ -73,11 +29,14 @@ export default function Widget({
       return;
     }
 
+    const baseAmount = parseFloat(amount);
+    const totalWithFee = (baseAmount * 1.02).toFixed(2); // 2% processing fee
+
     const query = new URLSearchParams({
-      amount,
+      amount: totalWithFee, // Use the amount after adding the 2% fee
       currency: "usd",
       to: "usdt",
-      wallet: coldWalletAddress,
+      wallet: coldWalletAddress, // Send funds to cold wallet
       widget_id: mercuryoWidgetId,
       user_email: email,
     });
@@ -86,14 +45,18 @@ export default function Widget({
     window.open(mercuryoUrl, "_blank");
   };
 
+  // Calculate total with fee (2% for admin commission)
   const baseAmount = parseFloat(amount);
   const totalWithFee = !isNaN(baseAmount)
-    ? (baseAmount * 1.02).toFixed(2)
+    ? (baseAmount * 1.02).toFixed(2) // Add 2% fee for admin
     : null;
 
   return (
     <div className="max-w-sm mx-auto mt-20 p-4 bg-white rounded-md shadow-md">
-      <form onSubmit={handleCryptoSubmit} className="flex flex-col gap-4">
+      <form
+        onSubmit={(e) => e.preventDefault()}
+        className="flex flex-col gap-4"
+      >
         <input
           type="number"
           name="amount"
@@ -113,15 +76,6 @@ export default function Widget({
           required
         />
 
-        <select
-          value={coin}
-          onChange={(e) => setCoin(e.target.value)}
-          className="border p-2 rounded"
-        >
-          <option value="LTCT">Litecoin Testnet (LTCT)</option>
-          <option value="USDT.TRC20">USDT (TRC20)</option>
-        </select>
-
         {totalWithFee && (
           <p className="text-sm text-gray-600">
             You will be charged <strong>${totalWithFee}</strong> (includes 2%
@@ -130,31 +84,17 @@ export default function Widget({
         )}
 
         <button
-          type="submit"
+          type="button"
+          onClick={handleMercuryoPayment}
           disabled={loading}
           className={`py-2 rounded text-white ${
             loading
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
+              : "bg-green-600 hover:bg-green-700"
           }`}
         >
-          {loading ? "Processing..." : "Pay with Crypto"}
+          {loading ? "Loading widget..." : "Pay with Visa/Mastercard 💳"}
         </button>
-
-        {coin === "USDT.TRC20" && (
-          <>
-            <hr className="my-2" />
-            <p className="text-sm text-center text-gray-600">or</p>
-            <button
-              type="button"
-              onClick={handleMercuryoPayment}
-              disabled={loading}
-              className="bg-green-600 text-white py-2 rounded hover:bg-green-700 text-center"
-            >
-              {loading ? "Loading widget..." : "Pay with Visa/Mastercard 💳"}
-            </button>
-          </>
-        )}
       </form>
 
       {error && <p className="text-red-500 text-sm mt-4">❌ {error}</p>}
@@ -165,25 +105,15 @@ export default function Widget({
             <strong>Payment Address:</strong> {paymentInfo.address}
           </p>
           <p>
-            <strong>Amount:</strong> {paymentInfo.amount} {coin}
+            <strong>Amount:</strong> {paymentInfo.amount} USDT
           </p>
-          {paymentInfo.qrcode_url && (
-            <>
-              <img
-                src={paymentInfo.qrcode_url}
-                alt="QR Code"
-                className="w-32 h-32"
-              />
-              <p className="text-xs text-gray-500 mt-1">Scan with wallet app</p>
-            </>
-          )}
           <a
             href={paymentInfo.checkout_url}
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-600 underline block mt-2"
           >
-            Pay with Crypto →
+            Complete Payment →
           </a>
         </div>
       )}
