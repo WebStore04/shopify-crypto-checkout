@@ -6,10 +6,10 @@ import bodyParser from "body-parser";
 import { connectDB } from "./db";
 
 import testRoutes from "./routes/test";
-import payRoutes from "./routes/pay";
+import coinpayRoutes from "./routes/coinPaymentsPay";
 import tokenRoutes from "./routes/token";
-import ipnRoutes from "./routes/ipn";
-import mercuryoRoutes from "./routes/mercuryo";
+import coinipnRoutes from "./routes/coinPaymentsIpn";
+import mercuryoWebhookIpnRoutes from "./routes/mercuryoWebhookIpn";
 
 dotenv.config();
 
@@ -26,10 +26,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", testRoutes);
-app.use("/api", payRoutes);
+app.use("/api", coinipnRoutes);
 app.use("/api", tokenRoutes);
-app.use("/api", ipnRoutes);
-app.use("/api", mercuryoRoutes);
+app.use("/api", coinipnRoutes);
+
+app.use("/api", mercuryoWebhookIpnRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
