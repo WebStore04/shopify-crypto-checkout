@@ -1,38 +1,24 @@
 import { Router, Request, Response } from "express";
-import crypto from "crypto";
 import dotenv from "dotenv";
 import axios from "axios";
 
 import Transaction from "../models/Transaction";
 import { sendEmail } from "../utils/sendEmail";
 import { ipAllowlist } from "../middleware/ipAllowList";
+import { verifyMercuryoWebhook } from "../middleware/verifyMercuryoWebhook";
 
 dotenv.config();
 
 const router = Router();
 
-const MERCURYO_WEBHOOK_SECRET = process.env.MERCURYO_WEBHOOK_SECRET!;
 const merchantEmail = process.env.MERCHANT_NOTIFICATION_EMAIL!;
 
 router.post(
   "/mercuryo/webhook",
   ipAllowlist,
+  verifyMercuryoWebhook,
   async (req: Request, res: Response) => {
-    const signature = req.headers["signature"] as string;
     const rawBody = req.body as Buffer;
-
-    // Verify HMAC signature
-    const expectedSig = crypto
-      .createHmac("sha256", MERCURYO_WEBHOOK_SECRET)
-      .update(rawBody)
-      .digest("hex");
-
-    if (signature !== expectedSig) {
-      console.error("[Mercuryo] Invalid webhook signature");
-      res.status(403).send("Invalid signature");
-      return;
-    }
-
     const event = JSON.parse(rawBody.toString());
 
     console.log("[Mercuryo] IPN received:", event);
