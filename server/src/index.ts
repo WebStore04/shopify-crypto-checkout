@@ -10,6 +10,7 @@ import coinpayRoutes from "./routes/coinPaymentsPay";
 import tokenRoutes from "./routes/token";
 import coinipnRoutes from "./routes/coinPaymentsIpn";
 import mercuryoWebhookIpnRoutes from "./routes/mercuryoWebhookIpn";
+import transactionsRoutes from "./routes/transaction";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use("/api", tokenRoutes);
 app.use("/api", coinipnRoutes);
 
 app.use("/api", mercuryoWebhookIpnRoutes);
+app.use("/api", transactionsRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
