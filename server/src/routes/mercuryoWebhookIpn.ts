@@ -23,53 +23,66 @@ router.post(
 
     console.log("[Mercuryo] IPN received:", event);
 
-    if (event.status === "completed") {
-      const fiatAmount = Number(event.fiat_amount);
-      const adminFee = parseFloat((fiatAmount * 0.02).toFixed(2));
-      const merchantReceived = parseFloat((fiatAmount - adminFee).toFixed(2));
+    try {
+      if (event.status === "completed") {
+        const fiatAmount = Number(event.fiat_amount);
+        const adminFee = parseFloat((fiatAmount * 0.02).toFixed(2));
+        const merchantReceived = parseFloat((fiatAmount - adminFee).toFixed(2));
 
-      // After the transaction is recorded, trigger withdrawal to cold wallet
-      const withdrawalResponse = await axios.post(
-        "http://localhost:3000/api/withdraw",
-        {
-          txId: event.id, // Pass the transaction ID from Mercuryo
-        }
-      );
+        const historyEntry = {
+          status: "confirmed", // Initial status
+          updatedAt: new Date(),
+          updatedBy: "system", // Could be "merchant" based on who is updating it
+          reason: "Transaction confirmed via Mercuryo webhook",
+        };
 
-      console.log("Withdrawal response:", withdrawalResponse.data);
+        // Create the transaction and save the history
+        const tx = await Transaction.create({
+          txId: event.id,
+          coin: "USDT.TRC20",
+          amount: fiatAmount,
+          merchantReceived,
+          adminFee,
+          address: event.wallet_address,
+          buyerEmail: event.user_email || "unknown",
+          status: "confirmed",
+          rawIPN: event,
+          history: [historyEntry], // Add history to transaction
+        });
 
-      const tx = await Transaction.create({
-        txId: event.id,
-        coin: "USDT.TRC20",
-        amount: fiatAmount,
-        merchantReceived,
-        adminFee,
-        address: event.wallet_address,
-        buyerEmail: event.user_email || "unknown",
-        status: "confirmed",
-        rawIPN: event,
-      });
+        // Send merchant notification email
+        await sendEmail(
+          merchantEmail,
+          "Card Payment Completed",
+          `
+          <h2>Card Payment Received</h2>
+          <p><strong>Buyer:</strong> ${event.user_email || "unknown"}</p>
+          <p><strong>Total Paid (Fiat):</strong> $${fiatAmount}</p>
+          <p><strong>Admin Fee (2%):</strong> $${adminFee}</p>
+          <p><strong>You Will Receive (USDT):</strong> ${merchantReceived}</p>
+          <p><strong>Wallet:</strong> ${event.wallet_address}</p>
+          <p><strong>TX ID:</strong> ${event.id}</p>
+          `
+        );
 
-      // Send merchant notification email
-      await sendEmail(
-        merchantEmail,
-        "Card Payment Completed",
-        `
-      <h2>Card Payment Received</h2>
-      <p><strong>Buyer:</strong> ${event.user_email || "unknown"}</p>
-      <p><strong>Total Paid (Fiat):</strong> $${fiatAmount}</p>
-      <p><strong>Admin Fee (2%):</strong> $${adminFee}</p>
-      <p><strong>You Will Receive (USDT):</strong> ${merchantReceived}</p>
-      <p><strong>Wallet:</strong> ${event.wallet_address}</p>
-      <p><strong>TX ID:</strong> ${event.id}</p>
-      `
-      );
+        console.log("[Mercuryo] Transaction recorded:", tx.txId);
 
-      console.log("[Mercuryo] Transaction recorded:", tx.txId);
+        // After the transaction is recorded, trigger withdrawal to cold wallet
+        const withdrawalResponse = await axios.post(
+          "http://localhost:3000/api/withdraw",
+          {
+            txId: event.id, // Pass the transaction ID from Mercuryo
+          }
+        );
+
+        console.log("Withdrawal response:", withdrawalResponse.data);
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("[Mercuryo] Error processing webhook:", error);
+      res.status(500).json({ error: "Internal Server Error" });
     }
-
-    res.status(200).json({ success: true });
-    return;
   }
 );
 
