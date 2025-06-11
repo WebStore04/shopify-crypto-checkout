@@ -13,6 +13,8 @@ interface Transaction {
   manualFlag?: boolean;
 }
 
+const itemsPerPageDefault = 5;
+
 export const TransactionTable = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,9 +23,10 @@ export const TransactionTable = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [fraudFilter, setFraudFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<"amount" | "createdAt" | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageDefault);
 
   const fetchTransactions = async () => {
     setTimeout(() => {
@@ -118,6 +121,17 @@ export const TransactionTable = () => {
     fetchTransactions();
   }, []);
 
+  // Debounce search input
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
   const refreshData = () => {
     setLoading(true);
     fetchTransactions();
@@ -125,8 +139,8 @@ export const TransactionTable = () => {
 
   let filtered = transactions.filter((txn) => {
     const matchSearch =
-      txn.txnId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      txn.email.toLowerCase().includes(searchTerm.toLowerCase());
+      txn.txnId.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      txn.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
     const matchStatus = statusFilter === "all" || txn.status === statusFilter;
     const matchFraud = fraudFilter === "all" || txn.fraudFlag === fraudFilter;
     return matchSearch && matchStatus && matchFraud;
@@ -177,7 +191,7 @@ export const TransactionTable = () => {
           }}
           className="border p-2 rounded-md text-sm w-full md:w-1/3"
         />
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <select
             className="border p-2 rounded-md text-sm"
             value={statusFilter}
@@ -232,7 +246,7 @@ export const TransactionTable = () => {
       {loading ? (
         <Skeleton />
       ) : (
-        <>
+        <div className="overflow-x-auto">
           <table className="min-w-full hidden md:table">
             <thead className="bg-gray-100">
               <tr>
@@ -339,29 +353,29 @@ export const TransactionTable = () => {
               ))}
             </tbody>
           </table>
-
-          {/* Pagination */}
-          <div className="flex justify-center items-center gap-4 mt-4">
-            <button
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage((p) => p - 1)}
-              className="px-3 py-1 bg-gray-200 text-sm rounded disabled:opacity-50"
-            >
-              Prev
-            </button>
-            <span className="text-sm font-medium">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((p) => p + 1)}
-              className="px-3 py-1 bg-gray-200 text-sm rounded disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </>
+        </div>
       )}
+
+      {/* Pagination */}
+      <div className="flex justify-center items-center gap-4 mt-4">
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((p) => p - 1)}
+          className="px-3 py-1 bg-gray-200 text-sm rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+        <span className="text-sm font-medium">
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage((p) => p + 1)}
+          className="px-3 py-1 bg-gray-200 text-sm rounded disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 };
