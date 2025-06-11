@@ -1,8 +1,12 @@
 import React from "react";
-import AdminPanel from "./components/AdminPanel";
+import { Dashboard } from "./components/Dashboard";
 
-const App: React.FC = () => {
-  return <AdminPanel />;
-};
+function App() {
+  return (
+    <div className="App">
+      <Dashboard />
+    </div>
+  );
+}
 
 export default App;
