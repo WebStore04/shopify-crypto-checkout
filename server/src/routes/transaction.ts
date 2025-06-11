@@ -83,4 +83,35 @@ router.post("/tx", async (req: Request, res: Response) => {
   }
 });
 
+router.get("/transactions", async (req: Request, res: Response) => {
+  const { page = 1, limit = 10 } = req.query; // Page and limit from query parameters
+
+  try {
+    const skip = (Number(page) - 1) * Number(limit);
+
+    const transactions = await Transaction.find()
+      .skip(skip)
+      .limit(Number(limit))
+      .sort({ createdAt: -1 }); // Sort by createdAt in descending order (optional)
+
+    const totalTransactions = await Transaction.countDocuments();
+    const totalPages = Math.ceil(totalTransactions / Number(limit));
+
+    res.status(200).json({
+      transactions,
+      pagination: {
+        totalTransactions,
+        totalPages,
+        currentPage: Number(page),
+        itemsPerPage: Number(limit),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching transactions:", error);
+    res
+      .status(500)
+      .json({ error: "Internal Server Error. Please try again later." });
+  }
+});
+
 export default router;

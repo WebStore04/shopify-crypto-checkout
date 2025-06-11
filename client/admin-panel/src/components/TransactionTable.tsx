@@ -1,24 +1,30 @@
+import useSWR from "swr";
 import { useState, useEffect } from "react";
 import { Skeleton } from "./Skeleton";
 import { ActionButtons } from "./ActionButtons";
 
 interface Transaction {
-  txnId: string;
-  email: string;
+  txId: string;
+  buyerEmail: string;
   amount: number;
   status: "pending" | "confirmed" | "frozen" | "refunded" | "released";
   fraudFlag: "high risk" | "low risk";
   createdAt: Date;
-  flags?: string[];
-  manualFlag?: boolean;
+  isFlagged?: boolean;
 }
 
 const itemsPerPageDefault = 5;
 
-export const TransactionTable = () => {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Something went wrong");
+  }
+  return res.json();
+};
 
+export const TransactionTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [fraudFilter, setFraudFilter] = useState("all");
@@ -28,102 +34,23 @@ export const TransactionTable = () => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [itemsPerPage, setItemsPerPage] = useState(itemsPerPageDefault);
 
-  const fetchTransactions = async () => {
-    setTimeout(() => {
-      setTransactions([
-        {
-          txnId: "TX1001",
-          email: "alice@example.com",
-          amount: 150,
-          status: "pending",
-          fraudFlag: "low risk",
-          createdAt: new Date("2025-06-09T08:00:00Z"),
-          manualFlag: true,
-        },
-        {
-          txnId: "TX1002",
-          email: "bob@example.com",
-          amount: 620,
-          status: "frozen",
-          fraudFlag: "high risk",
-          createdAt: new Date("2025-06-09T09:10:00Z"),
-          flags: ["IP mismatch", "> $500"],
-        },
-        {
-          txnId: "TX1003",
-          email: "charlie@example.com",
-          amount: 85,
-          status: "confirmed",
-          fraudFlag: "low risk",
-          createdAt: new Date("2025-06-08T14:22:00Z"),
-        },
-        {
-          txnId: "TX1004",
-          email: "diana@example.com",
-          amount: 999,
-          status: "frozen",
-          fraudFlag: "high risk",
-          createdAt: new Date("2025-06-08T17:45:00Z"),
-          flags: ["High amount"],
-        },
-        {
-          txnId: "TX1005",
-          email: "edward@example.com",
-          amount: 1000,
-          status: "refunded",
-          fraudFlag: "high risk",
-          createdAt: new Date("2025-06-07T11:33:00Z"),
-        },
-        {
-          txnId: "TX1006",
-          email: "frida@example.com",
-          amount: 430,
-          status: "confirmed",
-          fraudFlag: "low risk",
-          createdAt: new Date("2025-06-07T20:15:00Z"),
-        },
-        {
-          txnId: "TX1007",
-          email: "george@example.com",
-          amount: 70,
-          status: "released",
-          fraudFlag: "low risk",
-          createdAt: new Date("2025-06-06T10:12:00Z"),
-        },
-        {
-          txnId: "TX1008",
-          email: "hannah@example.com",
-          amount: 505,
-          status: "pending",
-          fraudFlag: "high risk",
-          createdAt: new Date("2025-06-06T21:55:00Z"),
-          flags: ["Suspicious IP"],
-        },
-        {
-          txnId: "TX1009",
-          email: "ivan@example.com",
-          amount: 300,
-          status: "confirmed",
-          fraudFlag: "low risk",
-          createdAt: new Date("2025-06-05T07:43:00Z"),
-        },
-        {
-          txnId: "TX1010",
-          email: "julie@example.com",
-          amount: 850,
-          status: "frozen",
-          fraudFlag: "high risk",
-          createdAt: new Date("2025-06-05T18:05:00Z"),
-          flags: ["IP mismatch", "> $500"],
-        },
-      ]);
-      setLoading(false);
-    }, 300);
-  };
+  // Fetch data from the backend, including pagination info
+  const { data, isLoading, mutate } = useSWR<{
+    transactions: Transaction[];
+    pagination: {
+      totalTransactions: number;
+      totalPages: number;
+      currentPage: number;
+      itemsPerPage: number;
+    };
+  }>(`/api/transactions?page=${currentPage}&limit=${itemsPerPage}`, fetcher);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
+  const { transactions = [], pagination } = data || {};
+  const {
+    totalPages = 1,
+    currentPage: page,
+    itemsPerPage: limit,
+  } = pagination || {};
 
   // Debounce search input
   useEffect(() => {
@@ -136,33 +63,42 @@ export const TransactionTable = () => {
     };
   }, [searchTerm]);
 
-  const refreshData = () => {
-    setLoading(true);
-    fetchTransactions();
-  };
-
-  let filtered = transactions.filter((txn) => {
-    const matchSearch =
-      txn.txnId.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      txn.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-    const matchStatus = statusFilter === "all" || txn.status === statusFilter;
-    const matchFraud = fraudFilter === "all" || txn.fraudFlag === fraudFilter;
-    return matchSearch && matchStatus && matchFraud;
-  });
-
-  if (sortBy) {
-    filtered = [...filtered].sort((a, b) => {
-      const valA = sortBy === "amount" ? a.amount : a.createdAt.getTime();
-      const valB = sortBy === "amount" ? b.amount : b.createdAt.getTime();
+  // Filter and sort transactions
+  const filtered = transactions
+    .filter((txn) => {
+      const matchSearch =
+        txn.txId.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        txn.buyerEmail
+          .toLowerCase()
+          .includes(debouncedSearchTerm.toLowerCase());
+      const matchStatus = statusFilter === "all" || txn.status === statusFilter;
+      const matchFraud = fraudFilter === "all" || txn.fraudFlag === fraudFilter;
+      return matchSearch && matchStatus && matchFraud;
+    })
+    .sort((a, b) => {
+      if (!sortBy) return 0;
+      const valA =
+        sortBy === "amount" ? a.amount : new Date(a.createdAt).getTime();
+      const valB =
+        sortBy === "amount" ? b.amount : new Date(b.createdAt).getTime();
       return sortOrder === "asc" ? valA - valB : valB - valA;
     });
-  }
 
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
-  const paginated = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Pagination control logic
+  const handlePrevPage = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    setItemsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
 
   const toggleSort = (field: "amount" | "createdAt") => {
     if (sortBy === field) {
@@ -173,12 +109,9 @@ export const TransactionTable = () => {
     }
   };
 
-  const toggleManualFlag = (txnId: string) => {
-    setTransactions((prev) =>
-      prev.map((txn) =>
-        txn.txnId === txnId ? { ...txn, manualFlag: !txn.manualFlag } : txn
-      )
-    );
+  const toggleManualFlag = async (txnId: string) => {
+    await fetch(`/api/tx/${txnId}/toggle-flag`, { method: "POST" });
+    mutate();
   };
 
   return (
@@ -230,10 +163,7 @@ export const TransactionTable = () => {
             <select
               id="perPage"
               value={itemsPerPage}
-              onChange={(e) => {
-                setCurrentPage(1);
-                setItemsPerPage(Number(e.target.value));
-              }}
+              onChange={handleItemsPerPageChange}
               className="border p-1 rounded-md text-sm"
             >
               {[5, 10, 25, 50].map((n) => (
@@ -247,7 +177,7 @@ export const TransactionTable = () => {
       </div>
 
       {/* Table */}
-      {loading ? (
+      {isLoading ? (
         <Skeleton />
       ) : (
         <div className="overflow-x-auto">
@@ -296,18 +226,18 @@ export const TransactionTable = () => {
               </tr>
             </thead>
             <tbody>
-              {paginated.map((txn, index) => (
+              {filtered.map((txn, index) => (
                 <tr
-                  key={txn.txnId}
+                  key={txn.txId}
                   className={`border-t hover:bg-gray-50 ${
                     txn.fraudFlag === "high risk" ? "bg-red-50" : ""
                   }`}
                 >
                   <td className="p-4 text-sm text-gray-500">
-                    {(currentPage - 1) * itemsPerPage + index + 1}
+                    {(page! - 1) * limit! + index + 1}
                   </td>
-                  <td className="p-4 text-sm">{txn.txnId}</td>
-                  <td className="p-4 text-sm">{txn.email}</td>
+                  <td className="p-4 text-sm">{txn.txId}</td>
+                  <td className="p-4 text-sm">{txn.buyerEmail}</td>
                   <td className="p-4 text-sm">${txn.amount}</td>
                   <td className="p-4 text-sm">
                     <span
@@ -334,35 +264,27 @@ export const TransactionTable = () => {
                     >
                       {txn.fraudFlag}
                     </span>
-                    {txn.flags && txn.flags.length > 0 && (
-                      <ul className="text-xs mt-1 text-red-600 list-disc list-inside space-y-1">
-                        {txn.flags.map((flag, i) => (
-                          <li key={i}>{flag}</li>
-                        ))}
-                      </ul>
-                    )}
                   </td>
                   <td className="p-4 text-sm">
                     <button
-                      onClick={() => toggleManualFlag(txn.txnId)}
+                      onClick={() => toggleManualFlag(txn.txId)}
                       className={`text-xs font-medium px-2 py-1 rounded-full transition ${
-                        txn.manualFlag
+                        txn.isFlagged
                           ? "bg-red-100 text-red-700 hover:bg-red-200"
                           : "bg-gray-100 text-gray-500 hover:bg-gray-200"
                       }`}
                     >
-                      {txn.manualFlag ? "🚫 Unflag" : "✅ Flag"}
+                      {txn.isFlagged ? "🚫 Unflag" : "✅ Flag"}
                     </button>
                   </td>
-
                   <td className="p-4 text-sm text-gray-500">
-                    {txn.createdAt.toLocaleDateString()}
+                    {new Date(txn.createdAt).toLocaleDateString()}
                   </td>
                   <td className="p-4 text-sm">
                     <ActionButtons
-                      txnId={txn.txnId}
+                      txnId={txn.txId}
                       status={txn.status}
-                      onActionComplete={refreshData}
+                      onActionComplete={mutate}
                     />
                   </td>
                 </tr>
@@ -376,7 +298,7 @@ export const TransactionTable = () => {
       <div className="flex justify-center items-center gap-4 mt-4">
         <button
           disabled={currentPage === 1}
-          onClick={() => setCurrentPage((p) => p - 1)}
+          onClick={handlePrevPage}
           className="px-3 py-1 bg-gray-200 text-sm rounded disabled:opacity-50"
         >
           Prev
@@ -386,7 +308,7 @@ export const TransactionTable = () => {
         </span>
         <button
           disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage((p) => p + 1)}
+          onClick={handleNextPage}
           className="px-3 py-1 bg-gray-200 text-sm rounded disabled:opacity-50"
         >
           Next
