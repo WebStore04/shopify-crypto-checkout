@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import Transaction from "../models/Transaction";
 import { sendEmail } from "../utils/sendEmail";
 import { authenticateJWT } from "../middleware/auth";
+import { validateEmail } from "../utils/validateEmail"; // Assuming you add a validation function for email
 
 // Load environment variables
 dotenv.config();
@@ -18,7 +19,7 @@ const MERCURYO_COLD_WALLET_ADDRESS = process.env.COLD_WALLET_ADDRESS!;
 
 // Withdraw route to handle automatic withdrawal to cold wallet
 router.post(
-  "/withdraw",
+  "/mercuryo/withdraw",
   authenticateJWT,
   async (req: Request, res: Response) => {
     const { amount, coin, email } = req.body;
@@ -26,6 +27,19 @@ router.post(
     // Validate request
     if (!amount || !coin || !email) {
       res.status(400).json({ error: "Missing required fields" });
+      return;
+    }
+
+    // Check for valid email format
+    if (!validateEmail(email)) {
+      res.status(400).json({ error: "Invalid email format" });
+      return;
+    }
+
+    // Check if the coin is valid (e.g., supported by the Mercuryo API)
+    const validCoins = ["USDT.TRC20", "BTC", "ETH", "LTC"];
+    if (!validCoins.includes(coin)) {
+      res.status(400).json({ error: "Invalid or unsupported coin" });
       return;
     }
 
@@ -64,6 +78,14 @@ router.post(
           address: MERCURYO_COLD_WALLET_ADDRESS,
           buyerEmail: email,
           rawIPN: response.data,
+          history: [
+            {
+              status: "withdrawn",
+              updatedAt: new Date(),
+              updatedBy: "system", // Could be "merchant" or "system"
+              reason: "Withdrawal initiated via API",
+            },
+          ],
         });
 
         // Send email notification to the merchant about the successful withdrawal
@@ -76,10 +98,11 @@ router.post(
           <p><strong>Buyer:</strong> ${email}</p>
           <p><strong>Transaction ID:</strong> ${response.data.transaction_id}</p>
           <p><strong>Status:</strong> ${response.data.status}</p>
-        `
+          `
         );
 
         console.log("Withdrawal successful, transaction recorded:", tx.txId);
+
         res.status(200).json({
           success: true,
           transaction_id: response.data.transaction_id,
@@ -90,7 +113,7 @@ router.post(
         console.error("[Mercuryo] Withdrawal failed:", response.data.message);
         res
           .status(500)
-          .json({ error: "Withdrawal failed", details: response.data });
+          .json({ error: "Withdrawal failed", details: response.data.message });
         return;
       }
     } catch (err) {
