@@ -13,7 +13,7 @@ router.get("/tx/:id", async (req: Request, res: Response) => {
 
     // If no transaction found, return 404
     if (!transaction) {
-      res.status(404).json({ error: "Transaction not found" });
+      res.status(404).json({ error: `Transaction with txId ${id} not found` });
       return;
     }
 
@@ -29,13 +29,18 @@ router.get("/tx/:id", async (req: Request, res: Response) => {
 
 // POST route to filter/search transactions
 router.post("/tx", async (req: Request, res: Response) => {
-  const { txId, status, dateRange, amountRange } = req.body; // Extract filter criteria from the request body
+  const {
+    txId,
+    status,
+    dateRange,
+    amountRange,
+    page = 1,
+    limit = 10,
+  } = req.body;
+  const filter: any = {};
 
-  const filter: any = {}; // Initialize the filter object
-
-  // Add filters dynamically based on the request body
   if (txId) {
-    filter.txId = { $regex: new RegExp(txId, "i") }; // Case-insensitive search
+    filter.txId = { $regex: new RegExp(txId, "i") };
   }
   if (status) {
     filter.status = status;
@@ -51,15 +56,29 @@ router.post("/tx", async (req: Request, res: Response) => {
   }
 
   try {
-    // Query the database using the filter object
-    const transactions = await Transaction.find(filter);
+    // Pagination logic
+    const skip = (page - 1) * limit;
 
-    // Return the filtered list of transactions
-    res.status(200).json(transactions);
+    const transactions = await Transaction.find(filter).skip(skip).limit(limit);
+
+    const totalTransactions = await Transaction.countDocuments(filter);
+    const totalPages = Math.ceil(totalTransactions / limit);
+
+    res.status(200).json({
+      transactions,
+      pagination: {
+        totalTransactions,
+        totalPages,
+        currentPage: page,
+        itemsPerPage: limit,
+      },
+    });
     return;
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res
+      .status(500)
+      .json({ error: "Internal Server Error. Please try again later." });
     return;
   }
 });
