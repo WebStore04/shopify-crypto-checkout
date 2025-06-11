@@ -47,6 +47,7 @@ export const TransactionTable = () => {
           status: "frozen",
           fraudFlag: "high risk",
           createdAt: new Date("2025-06-09T09:10:00Z"),
+          flags: ["IP mismatch", "> $500"],
         },
         {
           txnId: "TX1003",
@@ -63,6 +64,7 @@ export const TransactionTable = () => {
           status: "frozen",
           fraudFlag: "high risk",
           createdAt: new Date("2025-06-08T17:45:00Z"),
+          flags: ["High amount"],
         },
         {
           txnId: "TX1005",
@@ -95,6 +97,7 @@ export const TransactionTable = () => {
           status: "pending",
           fraudFlag: "high risk",
           createdAt: new Date("2025-06-06T21:55:00Z"),
+          flags: ["Suspicious IP"],
         },
         {
           txnId: "TX1009",
@@ -111,6 +114,7 @@ export const TransactionTable = () => {
           status: "frozen",
           fraudFlag: "high risk",
           createdAt: new Date("2025-06-05T18:05:00Z"),
+          flags: ["IP mismatch", "> $500"],
         },
       ]);
       setLoading(false);
@@ -293,7 +297,12 @@ export const TransactionTable = () => {
             </thead>
             <tbody>
               {paginated.map((txn, index) => (
-                <tr key={txn.txnId} className="border-t hover:bg-gray-50">
+                <tr
+                  key={txn.txnId}
+                  className={`border-t hover:bg-gray-50 ${
+                    txn.fraudFlag === "high risk" ? "bg-red-50" : ""
+                  }`}
+                >
                   <td className="p-4 text-sm text-gray-500">
                     {(currentPage - 1) * itemsPerPage + index + 1}
                   </td>
@@ -325,6 +334,13 @@ export const TransactionTable = () => {
                     >
                       {txn.fraudFlag}
                     </span>
+                    {txn.flags && txn.flags.length > 0 && (
+                      <ul className="text-xs mt-1 text-red-600 list-disc list-inside space-y-1">
+                        {txn.flags.map((flag, i) => (
+                          <li key={i}>{flag}</li>
+                        ))}
+                      </ul>
+                    )}
                   </td>
                   <td className="p-4 text-sm">
                     <button
