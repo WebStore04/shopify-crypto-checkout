@@ -2,7 +2,13 @@ import mongoose, { Schema, Document } from "mongoose";
 
 // Define the History type
 interface History {
-  status: "pending" | "confirmed" | "withdrawn" | "failed";
+  status:
+    | "pending"
+    | "confirmed"
+    | "refunded"
+    | "released"
+    | "withdrawn"
+    | "failed";
   updatedAt: Date;
   updatedBy?: string;
   reason?: string;
@@ -17,7 +23,13 @@ interface TransactionDocument extends Document {
   adminFee: number;
   address: string;
   buyerEmail: string;
-  status: "pending" | "confirmed" | "withdrawn" | "failed";
+  status:
+    | "pending"
+    | "confirmed"
+    | "refunded"
+    | "released"
+    | "withdrawn"
+    | "failed";
   fraudFlag: "high risk" | "low risk";
   rawIPN: object;
   history: History[];
@@ -25,6 +37,7 @@ interface TransactionDocument extends Document {
   metadata?: Record<string, any>;
   currency: "USD" | "EUR" | "USDT";
   isFlagged: boolean;
+  isFrozen: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,7 +53,14 @@ const transactionSchema: Schema<TransactionDocument> = new mongoose.Schema(
     buyerEmail: { type: String, required: true },
     status: {
       type: String,
-      enum: ["pending", "confirmed", "withdrawn", "failed"],
+      enum: [
+        "pending",
+        "confirmed",
+        "refunded",
+        "released",
+        "withdrawn",
+        "failed",
+      ],
       default: "pending",
     },
     fraudFlag: {
@@ -53,7 +73,14 @@ const transactionSchema: Schema<TransactionDocument> = new mongoose.Schema(
       {
         status: {
           type: String,
-          enum: ["pending", "confirmed", "withdrawn", "failed"],
+          enum: [
+            "pending",
+            "confirmed",
+            "refunded",
+            "released",
+            "withdrawn",
+            "failed",
+          ],
           required: true,
         },
         updatedAt: { type: Date, default: Date.now },
@@ -69,14 +96,15 @@ const transactionSchema: Schema<TransactionDocument> = new mongoose.Schema(
       enum: ["USD", "EUR", "USDT"],
     },
     isFlagged: { type: Boolean, default: false },
+    isFrozen: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
 // Indexing for better query performance
-transactionSchema.index({ txId: 1 });
-transactionSchema.index({ status: 1 });
-transactionSchema.index({ createdAt: -1 });
+// transactionSchema.index({ txId: 1 });
+// transactionSchema.index({ status: 1 });
+// transactionSchema.index({ createdAt: -1 });
 
 // Create the model
 const Transaction = mongoose.model<TransactionDocument>(

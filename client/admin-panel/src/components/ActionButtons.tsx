@@ -1,17 +1,24 @@
-// src/components/ActionButtons.tsx
 import { useState } from "react";
 import { CheckCircle, Lock, Unlock, RotateCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 interface ActionButtonsProps {
   txId: string;
-  status: string;
+  status:
+    | "pending"
+    | "confirmed"
+    | "refunded"
+    | "released"
+    | "withdrawn"
+    | "failed";
+  isFrozen: boolean;
   onActionComplete: () => void;
 }
 
 export const ActionButtons = ({
   txId,
   status,
+  isFrozen,
   onActionComplete,
 }: ActionButtonsProps) => {
   const [loading, setLoading] = useState<string | null>(null);
@@ -23,7 +30,7 @@ export const ActionButtons = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // Adjust as needed
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
       });
 
@@ -41,48 +48,52 @@ export const ActionButtons = ({
   };
 
   return (
-    <div className="flex flex-wrap gap-2 text-sm">
-      {status === "pending" && (
+    <div className="flex flex-wrap gap-2 text-xs">
+      {/* Approve Button (only for pending status) */}
+      {status === "pending" && !isFrozen && (
         <button
-          className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded flex items-center gap-1"
           onClick={() => handleAction("approve")}
+          className="px-3 py-1 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition duration-200"
           disabled={loading !== null}
         >
           <CheckCircle size={16} />
-          {loading === "approve" ? "..." : "Approve"}
+          {loading === "approve" ? "Approving..." : "Approve"}
         </button>
       )}
 
-      {status !== "frozen" && (
+      {/* Freeze Button (only for confirmed, failed, or withdrawn status, not frozen) */}
+      {!isFrozen && status !== "released" && (
         <button
-          className="bg-yellow-500 hover:bg-yellow-600 text-white px-2 py-1 rounded flex items-center gap-1"
           onClick={() => handleAction("freeze")}
+          className="px-3 py-1 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition duration-200"
           disabled={loading !== null}
         >
           <Lock size={16} />
-          {loading === "freeze" ? "..." : "Freeze"}
+          {loading === "freeze" ? "Freezing..." : "Freeze"}
         </button>
       )}
 
-      {status === "frozen" && (
+      {/* Unfreeze Button (only for frozen status) */}
+      {isFrozen && (
         <button
-          className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded flex items-center gap-1"
-          onClick={() => handleAction("release")}
+          onClick={() => handleAction("unfreeze")}
+          className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition duration-200"
           disabled={loading !== null}
         >
           <Unlock size={16} />
-          {loading === "release" ? "..." : "Release"}
+          {loading === "unfreeze" ? "Unfreezing..." : "Unfreeze"}
         </button>
       )}
 
-      {["frozen", "pending", "confirmed"].includes(status) && (
+      {/* Refund Button (only for pending, confirmed status) */}
+      {["pending", "confirmed"].includes(status) && !isFrozen && (
         <button
-          className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded flex items-center gap-1"
           onClick={() => handleAction("refund")}
+          className="px-3 py-1 bg-red-600 text-white rounded-xl hover:bg-red-700 transition duration-200"
           disabled={loading !== null}
         >
           <RotateCw size={16} />
-          {loading === "refund" ? "..." : "Refund"}
+          {loading === "refund" ? "Refunding..." : "Refund"}
         </button>
       )}
     </div>

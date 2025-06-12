@@ -151,7 +151,7 @@ const TransactionModal: React.FC<ModalProps> = ({
           </p>
         </div>
 
-        <div className="mt-6 flex justify-center gap-6">
+        {/* <div className="mt-6 flex justify-center gap-6">
           <button
             onClick={() => onApprove(transaction.txId)}
             className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition duration-200 ease-in-out transform hover:scale-105"
@@ -170,7 +170,7 @@ const TransactionModal: React.FC<ModalProps> = ({
           >
             Refund
           </button>
-        </div>
+        </div> */}
 
         <div className="mt-4 text-center">
           <button

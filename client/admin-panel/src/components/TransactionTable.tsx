@@ -12,7 +12,13 @@ interface Transaction {
   address: string;
   buyerEmail: string;
   amount: number;
-  status: "pending" | "confirmed" | "frozen" | "refunded" | "released";
+  status:
+    | "pending"
+    | "confirmed"
+    | "refunded"
+    | "released"
+    | "withdrawn"
+    | "failed";
   fraudFlag: "high risk" | "low risk";
   rawIPN: object;
   history: History[];
@@ -20,6 +26,7 @@ interface Transaction {
   metadata?: Record<string, any>;
   currency: "USD" | "EUR" | "USDT";
   isFlagged: boolean;
+  isFrozen: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -246,7 +253,11 @@ export const TransactionTable = () => {
                 <tr
                   key={txn.txId}
                   className={`border-t hover:bg-gray-50 ${
-                    txn.fraudFlag === "high risk" ? "bg-red-50" : ""
+                    txn.isFrozen === true ? "bg-blue-100" : ""
+                  } ${
+                    txn.fraudFlag === "high risk" && txn.isFrozen === false
+                      ? "bg-red-50 border-red-400"
+                      : ""
                   }`}
                 >
                   <td className="p-4 text-sm text-gray-500">
@@ -260,7 +271,7 @@ export const TransactionTable = () => {
                       className={`text-xs font-medium px-2 py-1 rounded-full ${
                         txn.status === "pending"
                           ? "bg-yellow-100 text-yellow-800"
-                          : txn.status === "frozen"
+                          : txn.isFrozen === true
                           ? "bg-blue-100 text-blue-800"
                           : txn.status === "refunded"
                           ? "bg-red-100 text-red-800"
@@ -300,6 +311,7 @@ export const TransactionTable = () => {
                     <ActionButtons
                       txId={txn.txId}
                       status={txn.status}
+                      isFrozen={txn.isFrozen}
                       onActionComplete={mutate}
                     />
                   </td>
