@@ -2,15 +2,26 @@ import useSWR from "swr";
 import { useState, useEffect } from "react";
 import { Skeleton } from "./Skeleton";
 import { ActionButtons } from "./ActionButtons";
+import TransactionModal from "./TransactionModal";
 
 interface Transaction {
   txId: string;
+  coin: string;
+  merchantReceived: number;
+  adminFee: number;
+  address: string;
   buyerEmail: string;
   amount: number;
   status: "pending" | "confirmed" | "frozen" | "refunded" | "released";
   fraudFlag: "high risk" | "low risk";
+  rawIPN: object;
+  history: History[];
+  expiresAt?: Date;
+  metadata?: Record<string, any>;
+  currency: "USD" | "EUR" | "USDT";
+  isFlagged: boolean;
   createdAt: Date;
-  isFlagged?: boolean;
+  updatedAt: Date;
 }
 
 const itemsPerPageDefault = 5;
@@ -25,6 +36,8 @@ const fetcher = async (url: string) => {
 };
 
 export const TransactionTable = () => {
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("all");
   const [fraudFilter, setFraudFilter] = useState("all");
@@ -206,9 +219,9 @@ export const TransactionTable = () => {
                 <th className="p-4 text-left text-sm font-semibold text-gray-600">
                   Fraud
                 </th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-600">
+                {/* <th className="p-4 text-left text-sm font-semibold text-gray-600">
                   Flagged?
-                </th>
+                </th> */}
                 <th
                   className="p-4 text-left text-sm font-semibold text-gray-600 cursor-pointer"
                   onClick={() => toggleSort("createdAt")}
@@ -222,6 +235,9 @@ export const TransactionTable = () => {
                 </th>
                 <th className="p-4 text-left text-sm font-semibold text-gray-600">
                   Actions
+                </th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-600">
+                  Details
                 </th>
               </tr>
             </thead>
@@ -265,7 +281,7 @@ export const TransactionTable = () => {
                       {txn.fraudFlag}
                     </span>
                   </td>
-                  <td className="p-4 text-sm">
+                  {/* <td className="p-4 text-sm">
                     <button
                       onClick={() => toggleManualFlag(txn.txId)}
                       className={`text-xs font-medium px-2 py-1 rounded-full transition ${
@@ -276,16 +292,24 @@ export const TransactionTable = () => {
                     >
                       {txn.isFlagged ? "🚫 Unflag" : "✅ Flag"}
                     </button>
-                  </td>
+                  </td> */}
                   <td className="p-4 text-sm text-gray-500">
                     {new Date(txn.createdAt).toLocaleDateString()}
                   </td>
                   <td className="p-4 text-sm">
                     <ActionButtons
-                      txnId={txn.txId}
+                      txId={txn.txId}
                       status={txn.status}
                       onActionComplete={mutate}
                     />
+                  </td>
+                  <td className="p-4 text-sm text-center">
+                    <button
+                      onClick={() => setSelectedTransaction(txn)} // Open modal on row click
+                      className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                    >
+                      Show Details
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -314,6 +338,18 @@ export const TransactionTable = () => {
           Next
         </button>
       </div>
+
+      {/* Transaction Modal */}
+      {selectedTransaction && (
+        <TransactionModal
+          transaction={selectedTransaction}
+          onClose={() => setSelectedTransaction(null)}
+          onFlagChange={toggleManualFlag}
+          onApprove={() => {}}
+          onFreeze={() => {}}
+          onRefund={() => {}}
+        />
+      )}
     </div>
   );
 };

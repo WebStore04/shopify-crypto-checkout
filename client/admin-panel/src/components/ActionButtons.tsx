@@ -1,19 +1,17 @@
 // src/components/ActionButtons.tsx
 import { useState } from "react";
-import { CheckCircle, XCircle, Lock, Unlock, RotateCw } from "lucide-react";
+import { CheckCircle, Lock, Unlock, RotateCw } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 interface ActionButtonsProps {
-  txnId: string;
+  txId: string;
   status: string;
-  isFlagged?: boolean;
   onActionComplete: () => void;
 }
 
 export const ActionButtons = ({
-  txnId,
+  txId,
   status,
-  isFlagged,
   onActionComplete,
 }: ActionButtonsProps) => {
   const [loading, setLoading] = useState<string | null>(null);
@@ -21,7 +19,7 @@ export const ActionButtons = ({
   const handleAction = async (action: string) => {
     setLoading(action);
     try {
-      const res = await fetch(`/api/tx/${txnId}/${action}`, {
+      const res = await fetch(`/api/tx/${txId}/${action}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
