@@ -114,4 +114,66 @@ router.get("/transactions", async (req: Request, res: Response) => {
   }
 });
 
+// Route to approve a transaction
+router.post("/tx/:txnId/approve", async (req: Request, res: Response) => {
+  // Approve logic here
+  res.json(true);
+  return;
+});
+
+// Route to freeze a transaction
+router.post("/tx/:id/freeze", async (req: Request, res: Response) => {
+  const { id } = req.params; // Transaction ID from URL
+
+  try {
+    // Find the transaction by ID and update the status to 'frozen'
+    const transaction = await Transaction.findOneAndUpdate(
+      { txId: id },
+      { isFrozen: true },
+      { new: true } // Return the updated transaction
+    );
+
+    if (!transaction) {
+      res.status(404).json({ error: "Transaction not found" });
+      return;
+    }
+
+    res.status(200).json(transaction); // Return updated transaction
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update transaction" });
+  }
+});
+
+// Route to unfreeze a transaction
+router.post("/tx/:id/unfreeze", async (req: Request, res: Response) => {
+  const { id } = req.params; // Transaction ID from URL
+
+  try {
+    // Find the transaction by ID and update the status to 'confirmed' (or another state)
+    const transaction = await Transaction.findOneAndUpdate(
+      { txId: id },
+      { isFrozen: false }, // or another status like 'released'
+      { new: true } // Return the updated transaction
+    );
+
+    if (!transaction) {
+      res.status(404).json({ error: "Transaction not found" });
+      return;
+    }
+
+    res.status(200).json(transaction); // Return updated transaction
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to unfreeze transaction" });
+  }
+});
+
+// Route to refund a transaction
+router.post("/tx/:txnId/refund", async (req: Request, res: Response) => {
+  // Refund logic here
+  res.json(true);
+  return;
+});
+
 export default router;
