@@ -24,6 +24,19 @@ router.post(
     console.log("[Mercuryo] IPN received:", event);
 
     try {
+      // Check if transaction already exists
+      const existingTransaction = await Transaction.findOne({
+        txId: event.id,
+      });
+
+      if (existingTransaction) {
+        console.log(
+          `[Mercuryo] Transaction with txId ${event.id} already exists.`
+        );
+        res.status(200).json({ success: true });
+        return;
+      }
+
       if (event.status === "completed") {
         const fiatAmount = Number(event.fiat_amount);
         const adminFee = parseFloat((fiatAmount * 0.02).toFixed(2));
@@ -47,7 +60,11 @@ router.post(
           buyerEmail: event.user_email || "unknown",
           status: "confirmed",
           rawIPN: event,
-          history: [historyEntry], // Add history to transaction
+          history: [historyEntry],
+          currency: "USD",
+          isFlagged: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
 
         // Send merchant notification email
@@ -76,6 +93,26 @@ router.post(
         );
 
         console.log("Withdrawal response:", withdrawalResponse.data);
+      } else if (event.status === "failed") {
+        // Handle failure scenario (can be used to mark transactions as failed)
+        const historyEntry = {
+          status: "failed",
+          updatedAt: new Date(),
+          updatedBy: "system",
+          reason: "Transaction failed via Mercuryo webhook",
+        };
+
+        const tx = await Transaction.create({
+          txId: event.id,
+          status: "failed",
+          history: [historyEntry],
+        });
+
+        console.log("[Mercuryo] Transaction failed:", tx.txId);
+      } else {
+        console.log(
+          `[Mercuryo] Transaction status is not 'completed' or 'failed'. Skipping...`
+        );
       }
 
       res.status(200).json({ success: true });
