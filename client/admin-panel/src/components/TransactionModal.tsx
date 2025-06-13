@@ -15,7 +15,13 @@ interface Transaction {
   adminFee: number;
   address: string;
   buyerEmail: string;
-  status: "pending" | "confirmed" | "frozen" | "refunded" | "released";
+  status:
+    | "pending"
+    | "confirmed"
+    | "refunded"
+    | "released"
+    | "withdrawn"
+    | "failed";
   fraudFlag: "high risk" | "low risk";
   rawIPN: object;
   history: History[];

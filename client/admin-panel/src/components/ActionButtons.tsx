@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { CheckCircle, Lock, Unlock, RotateCw } from "lucide-react";
 import { toast } from "react-hot-toast";
+import RefundSelectionModal from "./RefundSelectionModal";
+import NewCardInfoModal from "./NewCardInfoModal";
 
 interface ActionButtonsProps {
   txId: string;
@@ -12,6 +14,7 @@ interface ActionButtonsProps {
     | "withdrawn"
     | "failed";
   isFrozen: boolean;
+  buyerEmail: string;
   onActionComplete: () => void;
 }
 
@@ -19,11 +22,22 @@ export const ActionButtons = ({
   txId,
   status,
   isFrozen,
+  buyerEmail,
   onActionComplete,
 }: ActionButtonsProps) => {
   const [loading, setLoading] = useState<string | null>(null);
+  const [showRefundSelectionModal, setShowRefundSelectionModal] =
+    useState(false);
+  const [showNewCardModal, setShowNewCardModal] = useState(false);
+  const [cardInfo, setCardInfo] = useState<{
+    cardNumber: string;
+    expiryDate: string;
+  } | null>(null);
 
-  const handleAction = async (action: string) => {
+  const handleAction = async (
+    action: string,
+    cardInfo?: { cardNumber: string; expiryDate: string }
+  ) => {
     setLoading(action);
     try {
       const res = await fetch(`/api/tx/${txId}/${action}`, {
@@ -45,6 +59,31 @@ export const ActionButtons = ({
     } finally {
       setLoading(null);
     }
+  };
+
+  const handleRefundSelection = (
+    action: "refundToOriginal" | "refundToOther"
+  ) => {
+    if (action === "refundToOriginal") {
+      handleAction("refund");
+    } else {
+      setShowRefundSelectionModal(false);
+      setShowNewCardModal(true);
+    }
+  };
+
+  const handleNewCardSubmit = (cardInfo: {
+    cardNumber: string;
+    expiryDate: string;
+  }) => {
+    setCardInfo(cardInfo);
+    handleAction("refund", cardInfo);
+    setShowNewCardModal(false);
+  };
+
+  const handleBack = () => {
+    setShowNewCardModal(false);
+    setShowRefundSelectionModal(true);
   };
 
   return (
@@ -88,13 +127,33 @@ export const ActionButtons = ({
       {/* Refund Button (only for pending, confirmed status) */}
       {["pending", "confirmed"].includes(status) && !isFrozen && (
         <button
-          onClick={() => handleAction("refund")}
+          onClick={() => setShowRefundSelectionModal(true)}
           className="px-3 py-1 bg-red-600 text-white rounded-xl hover:bg-red-700 transition duration-200"
           disabled={loading !== null}
         >
           <RotateCw size={16} />
           {loading === "refund" ? "Refunding..." : "Refund"}
         </button>
+      )}
+
+      {/* Show Refund Selection Modal */}
+      {showRefundSelectionModal && (
+        <RefundSelectionModal
+          txId={txId}
+          email={buyerEmail}
+          onRefundToOriginal={() => handleRefundSelection("refundToOriginal")}
+          onRefundToOther={() => handleRefundSelection("refundToOther")}
+          onCancel={() => setShowRefundSelectionModal(false)}
+        />
+      )}
+
+      {/* Show New Card Info Modal */}
+      {showNewCardModal && (
+        <NewCardInfoModal
+          onBack={handleBack}
+          onSubmit={handleNewCardSubmit}
+          onCancel={() => setShowNewCardModal(false)}
+        />
       )}
     </div>
   );

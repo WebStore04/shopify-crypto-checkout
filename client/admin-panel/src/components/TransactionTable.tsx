@@ -310,6 +310,7 @@ export const TransactionTable = () => {
                   <td className="p-4 text-sm">
                     <ActionButtons
                       txId={txn.txId}
+                      buyerEmail={txn.buyerEmail}
                       status={txn.status}
                       isFrozen={txn.isFrozen}
                       onActionComplete={mutate}
