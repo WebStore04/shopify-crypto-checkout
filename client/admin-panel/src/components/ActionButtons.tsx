@@ -96,7 +96,7 @@ export const ActionButtons = ({
       {status === "pending" && !isFrozen && (
         <button
           onClick={() => handleAction("approve")}
-          className="px-3 py-1 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition duration-200"
+          className="px-3 w-[80px] py-1 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition duration-200"
           disabled={loading !== null}
         >
           <CheckCircle size={16} />
@@ -108,7 +108,7 @@ export const ActionButtons = ({
       {!isFrozen && status !== "released" && (
         <button
           onClick={() => handleAction("freeze")}
-          className="px-3 py-1 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition duration-200"
+          className="px-3 w-[80px] py-1 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition duration-200"
           disabled={loading !== null}
         >
           <Lock size={16} />
@@ -120,7 +120,7 @@ export const ActionButtons = ({
       {isFrozen && (
         <button
           onClick={() => handleAction("unfreeze")}
-          className="px-3 py-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition duration-200"
+          className="px-3 w-[80px] py-1 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition duration-200"
           disabled={loading !== null}
         >
           <Unlock size={16} />
@@ -132,7 +132,7 @@ export const ActionButtons = ({
       {["pending", "confirmed"].includes(status) && !isFrozen && (
         <button
           onClick={() => setShowRefundSelectionModal(true)}
-          className="px-3 py-1 bg-red-600 text-white rounded-xl hover:bg-red-700 transition duration-200"
+          className="px-3 w-[80px] py-1 bg-red-600 text-white rounded-xl hover:bg-red-700 transition duration-200"
           disabled={loading !== null}
         >
           <RotateCw size={16} />
