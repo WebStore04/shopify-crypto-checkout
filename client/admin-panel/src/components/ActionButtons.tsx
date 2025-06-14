@@ -36,10 +36,14 @@ export const ActionButtons = ({
 
   const handleAction = async (
     action: string,
+    refundTo?: string,
     cardInfo?: { cardNumber: string; expiryDate: string }
   ) => {
     setLoading(action);
     try {
+      if (refundTo === "original") action += "-original";
+      else if (refundTo === "other") action += "-other";
+
       const res = await fetch(`/api/tx/${txId}/${action}`, {
         method: "POST",
         headers: {
@@ -65,7 +69,7 @@ export const ActionButtons = ({
     action: "refundToOriginal" | "refundToOther"
   ) => {
     if (action === "refundToOriginal") {
-      handleAction("refund");
+      handleAction("refund", "original");
     } else {
       setShowRefundSelectionModal(false);
       setShowNewCardModal(true);
@@ -77,7 +81,7 @@ export const ActionButtons = ({
     expiryDate: string;
   }) => {
     setCardInfo(cardInfo);
-    handleAction("refund", cardInfo);
+    handleAction("refund", "other", cardInfo);
     setShowNewCardModal(false);
   };
 

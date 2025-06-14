@@ -1,5 +1,6 @@
 import { Router, Request, Response } from "express";
 import Transaction from "../models/Transaction";
+import axios from "axios";
 
 const router = Router();
 
@@ -170,10 +171,56 @@ router.post("/tx/:id/unfreeze", async (req: Request, res: Response) => {
 });
 
 // Route to refund a transaction
-router.post("/tx/:txnId/refund", async (req: Request, res: Response) => {
-  // Refund logic here
-  res.json(true);
-  return;
-});
+router.post(
+  "/tx/:txnId/refund-original",
+  async (req: Request, res: Response) => {
+    const { txId } = req.params;
+    try {
+      // Fetch the transaction from the database
+      const transaction = await Transaction.findOne({ txId });
+      if (!transaction) {
+        res.status(404).json({ error: "Transaction not found" });
+        return;
+      }
+
+      // Get the original card information from the transaction (e.g., from rawIPN)
+      const originalCardInfo = transaction.rawIPN;
+
+      // Trigger the refund through Mercuryo API (using the original card info)
+      const response = await axios.post(
+        "https://api.mercuryo.io/v1.6/withdraw",
+        {
+          amount: transaction.amount,
+          currency: "USDT",
+          wallet: originalCardInfo,
+          user_email: transaction.buyerEmail,
+          reason: "Refund to original card",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.MERCURYO_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data.status === "success") {
+        // Update the transaction status to "refunded"
+        transaction.status = "refunded";
+        await transaction.save();
+
+        res.status(200).json({
+          success: true,
+          message: "Refund to original card successful",
+        });
+      } else {
+        res.status(400).json({ error: "Mercuryo refund failed" });
+      }
+    } catch (err) {
+      console.error("Error processing refund to original card:", err);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+);
 
 export default router;
