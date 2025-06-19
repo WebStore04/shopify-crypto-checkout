@@ -12,7 +12,7 @@ export default function BushaWidget() {
   // const [checkoutUrl, setCheckoutUrl] = useState("");
 
   const publicKey = "pub_7RymeIhr8pg8B1V4UL6wA";
-  const recipientAddr = "0xxxxxd134aCd3221a0xxxx80ADE3aF39Ce219037c";
+  const recipientAddr = "0xa206f668542B4A9A94637c1C5164881dFE6Df8e6";
 
   const osUrl =
     `https://sandbox.buy.busha.co/` +
