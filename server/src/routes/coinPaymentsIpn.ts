@@ -22,7 +22,7 @@ if (!COLD_WALLET_ADDRESS) {
   throw new Error("Missing COLD_WALLET_ADDRESS in env");
 }
 
-router.post("/ipn", async (_req: Request, res: Response) => {
+router.post("/coinpayments/ipn", async (_req: Request, res: Response) => {
   const ipnSecret = process.env.COINPAYMENTS_IPN_SECRET;
   const hmacHeader = _req.headers["hmac"] as string;
 

@@ -11,6 +11,7 @@ import tokenRoutes from "./routes/token";
 import coinipnRoutes from "./routes/coinPaymentsIpn";
 import mercuryoWebhookIpnRoutes from "./routes/mercuryoWebhookIpn";
 import transactionsRoutes from "./routes/transaction";
+import bushaPay from "./routes/bushaPay";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api", coinipnRoutes);
 
 app.use("/api", mercuryoWebhookIpnRoutes);
 app.use("/api", transactionsRoutes);
+app.use("/api", bushaPay);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

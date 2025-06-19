@@ -23,7 +23,7 @@ const client = new Coinpayments({
 });
 
 router.post(
-  "/pay",
+  "/coinpayments/pay",
   authenticateJWT,
   async (
     _req: Request<{}, {}, PayRequestBody> & { user?: PayRequestUser },
