@@ -1,16 +1,15 @@
-// components/BushaWidget.tsx
 import { useState } from "react";
 
-interface WidgetProps {
-  token: string;
-}
+// interface WidgetProps {
+//   token?: string;
+// }
 
-export default function BushaWidget({ token }: WidgetProps) {
+export default function BushaWidget() {
   const [email, setEmail] = useState("");
   const [amount, setAmount] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [checkoutUrl, setCheckoutUrl] = useState("");
+  // const [loading, setLoading] = useState(false);
+  // const [error, setError] = useState("");
+  // const [checkoutUrl, setCheckoutUrl] = useState("");
 
   const publicKey = "pub_7RymeIhr8pg8B1V4UL6wA";
   const recipientAddr = "0xxxxxd134aCd3221a0xxxx80ADE3aF39Ce219037c";
@@ -24,43 +23,43 @@ export default function BushaWidget({ token }: WidgetProps) {
     `&fiatCurrency=KES&fiatAmount=15000` +
     `&redirectUrl=${encodeURIComponent("https://your-shop.com/success")}`;
 
-  token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc1MDM1NzQ4MywiZXhwIjoxNzUwOTYyMjgzfQ.pvzlhsF7JtACG6fybB653Gp58TvsRoUW671AwyoS9gc";
+  // const token =
+  //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc1MDM1NzQ4MywiZXhwIjoxNzUwOTYyMjgzfQ.pvzlhsF7JtACG6fybB653Gp58TvsRoUW671AwyoS9gc";
 
-  const handlePay = async () => {
-    setError("");
-    const parsedAmount = parseFloat(amount);
+  // const handlePay = async () => {
+  //   setError("");
+  //   const parsedAmount = parseFloat(amount);
 
-    if (!email || isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError("Please enter a valid email and amount.");
-      return;
-    }
+  //   if (!email || isNaN(parsedAmount) || parsedAmount <= 0) {
+  //     setError("Please enter a valid email and amount.");
+  //     return;
+  //   }
 
-    setLoading(true);
+  //   setLoading(true);
 
-    try {
-      const res = await fetch("/api/pay", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email, amount }),
-      });
+  //   try {
+  //     const res = await fetch("/api/pay", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({ email, amount }),
+  //     });
 
-      const data = await res.json();
-      if (res.ok && data.checkout_url) {
-        setCheckoutUrl(data.checkout_url);
-        window.open(data.checkout_url, "_blank");
-      } else {
-        throw new Error(data?.error || "Failed to initiate payment.");
-      }
-    } catch (err: any) {
-      setError(err.message || "Unexpected error.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     const data = await res.json();
+  //     if (res.ok && data.checkout_url) {
+  //       setCheckoutUrl(data.checkout_url);
+  //       window.open(data.checkout_url, "_blank");
+  //     } else {
+  //       throw new Error(data?.error || "Failed to initiate payment.");
+  //     }
+  //   } catch (err: any) {
+  //     setError(err.message || "Unexpected error.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   return (
     <div className="p-4 rounded-xl border bg-white shadow max-w-md mx-auto">
@@ -96,7 +95,7 @@ export default function BushaWidget({ token }: WidgetProps) {
         Buy with Busha
       </button>
 
-      {error && <p className="text-red-500 mt-2">{error}</p>}
+      {/* {error && <p className="text-red-500 mt-2">{error}</p>} */}
     </div>
   );
 }
