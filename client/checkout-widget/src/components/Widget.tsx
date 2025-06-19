@@ -1,122 +1,102 @@
+// components/BushaWidget.tsx
 import { useState } from "react";
 
 interface WidgetProps {
-  mercuryoWidgetId?: string;
-  coldWalletAddress?: string;
+  token: string;
 }
 
-export default function Widget({
-  mercuryoWidgetId = "xxxxxxxxxxxxx",
-  coldWalletAddress = "xxxxxxxxxxxxxxxxx",
-}: WidgetProps) {
-  const [amount, setAmount] = useState("");
+export default function BushaWidget({ token }: WidgetProps) {
   const [email, setEmail] = useState("");
+  const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [paymentInfo, setPaymentInfo] = useState<null | {
-    address: string;
-    amount: string;
-    checkout_url: string;
-  }>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState("");
 
-  // Handle Mercuryo payment (Visa/Mastercard to USDT)
-  const handleMercuryoPayment = () => {
+  const publicKey = "pub_7RymeIhr8pg8B1V4UL6wA";
+  const recipientAddr = "0xxxxxd134aCd3221a0xxxx80ADE3aF39Ce219037c";
+
+  const osUrl =
+    `https://sandbox.buy.busha.co/` +
+    `?publicKey=${publicKey}` +
+    `&side=buy` +
+    `&address=${recipientAddr}` +
+    `&cryptoAsset=USDT&network=ETH` +
+    `&fiatCurrency=KES&fiatAmount=15000` +
+    `&redirectUrl=${encodeURIComponent("https://your-shop.com/success")}`;
+
+  token =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoidXNlciIsImlhdCI6MTc1MDM1NzQ4MywiZXhwIjoxNzUwOTYyMjgzfQ.pvzlhsF7JtACG6fybB653Gp58TvsRoUW671AwyoS9gc";
+
+  const handlePay = async () => {
     setError("");
-
     const parsedAmount = parseFloat(amount);
+
     if (!email || isNaN(parsedAmount) || parsedAmount <= 0) {
-      setError("Enter a valid email and amount before paying");
+      setError("Please enter a valid email and amount.");
       return;
     }
 
-    const baseAmount = parseFloat(amount);
-    const totalWithFee = (baseAmount * 1.02).toFixed(2); // 2% processing fee
+    setLoading(true);
 
-    const query = new URLSearchParams({
-      amount: totalWithFee, // Use the amount after adding the 2% fee
-      currency: "usd",
-      to: "usdt",
-      wallet: coldWalletAddress, // Send funds to cold wallet
-      widget_id: mercuryoWidgetId,
-      user_email: email,
-    });
+    try {
+      const res = await fetch("/api/pay", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email, amount }),
+      });
 
-    const mercuryoUrl = `https://widget.mercuryo.io/?${query.toString()}`;
-    window.open(mercuryoUrl, "_blank");
+      const data = await res.json();
+      if (res.ok && data.checkout_url) {
+        setCheckoutUrl(data.checkout_url);
+        window.open(data.checkout_url, "_blank");
+      } else {
+        throw new Error(data?.error || "Failed to initiate payment.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Unexpected error.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Calculate total with fee (2% for admin commission)
-  const baseAmount = parseFloat(amount);
-  const totalWithFee = !isNaN(baseAmount)
-    ? (baseAmount * 1.02).toFixed(2) // Add 2% fee for admin
-    : null;
-
   return (
-    <div className="max-w-sm mx-auto mt-20 p-4 bg-white rounded-md shadow-md">
-      <form
-        onSubmit={(e) => e.preventDefault()}
-        className="flex flex-col gap-4"
+    <div className="p-4 rounded-xl border bg-white shadow max-w-md mx-auto">
+      <h2 className="text-xl font-bold mb-2">Pay with Card (Busha)</h2>
+      <input
+        type="email"
+        placeholder="Email"
+        className="w-full p-2 border rounded mb-2"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        type="number"
+        placeholder="Amount in USD"
+        className="w-full p-2 border rounded mb-2"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+      />
+
+      {/* <button
+        onClick={handlePay}
+        disabled={loading}
+        className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
       >
-        <input
-          type="number"
-          name="amount"
-          placeholder="Amount (USD)"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          className="border p-2 rounded"
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Buyer Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border p-2 rounded"
-          required
-        />
+        {loading ? "Processing..." : "Pay Now"}
+      </button> */}
 
-        {totalWithFee && (
-          <p className="text-sm text-gray-600">
-            You will be charged <strong>${totalWithFee}</strong> (includes 2%
-            processing fee)
-          </p>
-        )}
+      <button
+        className="w-full bg-blue-600 text-white p-2 rounded disabled:opacity-50"
+        type="button"
+        onClick={() => window.open(osUrl, "_blank")}
+      >
+        Buy with Busha
+      </button>
 
-        <button
-          type="button"
-          onClick={handleMercuryoPayment}
-          disabled={loading}
-          className={`py-2 rounded text-white ${
-            loading
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700"
-          }`}
-        >
-          {loading ? "Loading widget..." : "Pay with Visa/Mastercard 💳"}
-        </button>
-      </form>
-
-      {error && <p className="text-red-500 text-sm mt-4">❌ {error}</p>}
-
-      {paymentInfo && (
-        <div className="mt-6 space-y-2">
-          <p>
-            <strong>Payment Address:</strong> {paymentInfo.address}
-          </p>
-          <p>
-            <strong>Amount:</strong> {paymentInfo.amount} USDT
-          </p>
-          <a
-            href={paymentInfo.checkout_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline block mt-2"
-          >
-            Complete Payment →
-          </a>
-        </div>
-      )}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
     </div>
   );
 }

@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import tailwindcss from "tailwindcss";
 
 // https://vite.dev/config/
@@ -12,7 +12,12 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:3000'
+      "/api": {
+        target: "http://localhost:3000", // your backend port
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path: any) => path.replace(/^\/api/, "/api"), // keep the /api prefix
+      },
     },
-  }
-})
+  },
+});
