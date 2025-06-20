@@ -13,7 +13,7 @@ export default function BushaWidget() {
 
   const osUrl =
     `https://sandbox.buy.busha.co/?publicKey=${publicKey}` +
-    `&side=buy&cryptoAsset=USDT&network=TRC20` +
+    `&side=buy&cryptoAsset=USDT` +
     `&fiatCurrency=KES&fiatAmount=${encodeURIComponent(amount)}` +
     `&address=${merchantWallet}` +
     `&redirectUrl=${encodeURIComponent("https://your-shop.com/success")}`;
